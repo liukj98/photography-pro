@@ -1,0 +1,36 @@
+{
+  "version": "1.0",
+  "sprint_id": 1,
+  "iteration": 1,
+  "timestamp": "2026-03-28T19:00:00Z",
+  "evaluator": "evaluator-v1",
+  
+  "summary": {
+    "overall_score": 0,
+    "status": "PENDING",
+    "verdict": "待评估"
+  },
+  
+  "scores": {
+    "functional": { "score": 0, "max": 10, "weight": 0.30 },
+    "design": { "score": 0, "max": 10, "weight": 0.25 },
+    "code": { "score": 0, "max": 10, "weight": 0.25 },
+    "performance": { "score": 0, "max": 10, "weight": 0.15 },
+    "security": { "score": 0, "max": 10, "weight": 0.05 }
+  },
+  
+  "findings": [],
+  
+  "metrics": {
+    "test_coverage": 0,
+    "build_time": 0,
+    "bundle_size": 0,
+    "lighthouse_score": 0
+  },
+  
+  "next_action": {
+    "type": "pending",
+    "priority": "none",
+    "estimated_effort": "0h"
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "version": "1.0.0",
+  "last_updated": "2026-03-28T19:00:00Z",
+  "sprint": {
+    "id": 1,
+    "status": "in_progress",
+    "current_iteration": 2,
+    "max_iterations": 5,
+    "completed_tasks": [
+      "项目初始化",
+      "基础布局组件"
+    ],
+    "pending_tasks": [
+      "图片画廊组件",
+      "响应式适配"
+    ]
+  },
+  "context_summary": "摄影作品集网站项目，当前 Sprint 1 进行中。已完成基础布局和图片展示功能，正在进行响应式适配优化。",
+  "key_decisions": [
+    {
+      "date": "2026-03-28T10:00:00Z",
+      "decision": "使用 React + TypeScript + Tailwind CSS 技术栈",
+      "rationale": "开发效率高，类型安全，样式系统完善"
+    },
+    {
+      "date": "2026-03-28T15:00:00Z",
+      "decision": "采用 Masonry 布局展示图片画廊",
+      "rationale": "更好的视觉体验，适合不同比例的摄影作品"
+    }
+  ],
+  "known_issues": [
+    {
+      "id": "ISS-001",
+      "severity": "P1",
+      "description": "移动端导航栏按钮溢出",
+      "status": "in_fix"
+    }
+  ],
+  "metrics": {
+    "total_commits": 8,
+    "lines_of_code": 1200,
+    "test_files": 3
+  }
+}

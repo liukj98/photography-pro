@@ -11,92 +11,59 @@ export function useLike(photoId: string) {
   const { addToast } = useToastStore();
   const interactionStore = useInteractionStore();
   
-  // 从全局 store 获取状态
-  const storeState = interactionStore.getLikeState(photoId);
-  const [isLiked, setIsLiked] = useState(storeState.isLiked);
-  const [likesCount, setLikesCount] = useState(storeState.count);
+  // 本地状态 - 不从 store 初始化，完全从服务器获取
+  const [isLiked, setIsLiked] = useState(false);
+  const [likesCount, setLikesCount] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
   
-  // 订阅 store 变化（跨组件同步）
-  useEffect(() => {
-    const unsubscribe = useInteractionStore.subscribe(
-      (state) => ({
-        isLiked: state.likes.get(photoId),
-        count: state.likesCount.get(photoId),
-      }),
-      (curr) => {
-        if (curr.isLiked !== undefined) setIsLiked(curr.isLiked);
-        if (curr.count !== undefined) setLikesCount(curr.count);
-      }
-    );
-    return unsubscribe;
-  }, [photoId]);
-
-  // Check initial like status - 优先从持久化 store 恢复，再同步服务器
-  useEffect(() => {
-    if (!isAuthenticated || !user || !photoId) return;
-
-    const checkLikeStatus = async () => {
-      // 优先从持久化 store 获取状态
-      const storeState = interactionStore.getLikeState(photoId);
-      if (storeState.isLiked) {
-        setIsLiked(true);
-        setLikesCount(storeState.count);
-      }
-
-      if (!isSupabaseConfigured) return;
-
-      try {
-        // 后台同步服务器状态
-        const { data } = await supabase
-          .from('likes')
-          .select('id')
-          .eq('photo_id', photoId)
-          .eq('user_id', user.id)
-          .single();
-
-        const serverIsLiked = !!data;
-        // 只有服务器状态与本地不同时才更新
-        if (serverIsLiked !== storeState.isLiked) {
-          setIsLiked(serverIsLiked);
-          interactionStore.setLike(photoId, serverIsLiked, likesCount);
-        }
-      } catch {
-        // 服务器无记录，确保本地状态为 false
-        if (storeState.isLiked) {
-          setIsLiked(false);
-          interactionStore.setLike(photoId, false, likesCount);
-        }
-      }
-    };
-
-    checkLikeStatus();
-  }, [photoId, user, isAuthenticated, interactionStore, likesCount]);
-
-  // Get likes count
+  // 初始化：从服务器获取数据
   useEffect(() => {
     if (!photoId) return;
 
-    const fetchLikesCount = async () => {
-      if (!isSupabaseConfigured) {
-        setLikesCount(Math.floor(Math.random() * 100));
-        return;
-      }
+    let isMounted = true;
 
+    const fetchData = async () => {
+      // 1. 获取点赞总数
       try {
-        const { count } = await supabase
+        const { data: likesData, error: likesError } = await supabase
           .from('likes')
-          .select('*', { count: 'exact', head: true })
+          .select('id, user_id')
           .eq('photo_id', photoId);
 
-        setLikesCount(count || 0);
-      } catch {
-        setLikesCount(0);
+        if (!isMounted) return;
+
+        if (!likesError && likesData) {
+          const count = likesData.length;
+          setLikesCount(count);
+          
+          // 2. 检查当前用户是否已点赞
+          if (user?.id) {
+            const hasLiked = likesData.some((like: any) => like.user_id === user.id);
+            setIsLiked(hasLiked);
+          }
+        }
+        
+        setIsInitialized(true);
+      } catch (err) {
+        console.error('Failed to fetch likes:', err);
+        setIsInitialized(true);
       }
     };
 
-    fetchLikesCount();
-  }, [photoId]);
+    if (isSupabaseConfigured) {
+      fetchData();
+    } else {
+      // Demo mode
+      const randomCount = Math.floor(Math.random() * 100);
+      setLikesCount(randomCount);
+      setIsInitialized(true);
+    }
+
+    return () => {
+      isMounted = false;
+    };
+  }, [photoId, user?.id]); // 只依赖 photoId 和 userId
 
   const toggleLike = async () => {
     if (!isAuthenticated) {
@@ -106,45 +73,62 @@ export function useLike(photoId: string) {
 
     if (!user) return { error: '未登录' };
 
+    if (isLoading) {
+      return { error: null };
+    }
+
     setIsLoading(true);
 
-    // Demo mode - 使用 store 同步更新
+    // Demo mode
     if (!isSupabaseConfigured) {
       await new Promise((resolve) => setTimeout(resolve, 300));
-      const result = interactionStore.toggleLike(photoId, likesCount);
-      setIsLiked(result.isLiked);
-      setLikesCount(result.newCount);
+      const newIsLiked = !isLiked;
+      const newCount = newIsLiked ? likesCount + 1 : Math.max(0, likesCount - 1);
+      setIsLiked(newIsLiked);
+      setLikesCount(newCount);
       setIsLoading(false);
       return { error: null };
     }
 
+    // 保存当前状态用于回滚
+    const previousIsLiked = isLiked;
+    const previousCount = likesCount;
+    
     try {
-      // 乐观更新：先更新本地状态
-      const result = interactionStore.toggleLike(photoId, likesCount);
-      setIsLiked(result.isLiked);
-      setLikesCount(result.newCount);
+      // 乐观更新
+      const newIsLiked = !isLiked;
+      const newCount = newIsLiked ? likesCount + 1 : Math.max(0, likesCount - 1);
+      setIsLiked(newIsLiked);
+      setLikesCount(newCount);
+      
+      // 更新 store（用于跨组件同步）
+      interactionStore.setLike(photoId, newIsLiked, newCount);
 
-      if (result.isLiked) {
-        // Like
-        await supabase.from('likes').insert({
+      if (newIsLiked) {
+        // 点赞
+        const { error } = await supabase.from('likes').insert({
           photo_id: photoId,
           user_id: user.id,
         } as any);
+        
+        if (error) throw error;
       } else {
-        // Unlike
-        await supabase
+        // 取消点赞
+        const { error } = await supabase
           .from('likes')
           .delete()
           .eq('photo_id', photoId)
           .eq('user_id', user.id);
+          
+        if (error) throw error;
       }
 
       return { error: null };
     } catch (err) {
-      // 失败时回滚
-      const rollbackResult = interactionStore.toggleLike(photoId, likesCount);
-      setIsLiked(rollbackResult.isLiked);
-      setLikesCount(rollbackResult.newCount);
+      // 回滚
+      setIsLiked(previousIsLiked);
+      setLikesCount(previousCount);
+      interactionStore.setLike(photoId, previousIsLiked, previousCount);
       
       const errorMessage = err instanceof Error ? err.message : '操作失败';
       addToast(errorMessage, 'error');
@@ -154,7 +138,7 @@ export function useLike(photoId: string) {
     }
   };
 
-  return { isLiked, likesCount, isLoading, toggleLike };
+  return { isLiked, likesCount, isLoading, isInitialized, toggleLike };
 }
 
 // ==================== Favorite Hook ====================
@@ -164,60 +148,50 @@ export function useFavorite(photoId: string) {
   const { addToast } = useToastStore();
   const interactionStore = useInteractionStore();
   
-  // 从全局 store 获取状态
-  const [isFavorited, setIsFavorited] = useState(interactionStore.getFavoriteState(photoId));
+  const [isFavorited, setIsFavorited] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
   
-  // 订阅 store 变化（跨组件同步）
+  // 从服务器获取收藏状态
   useEffect(() => {
-    const unsubscribe = useInteractionStore.subscribe(
-      (state) => state.favorites.get(photoId),
-      (curr) => {
-        if (curr !== undefined) setIsFavorited(curr);
-      }
-    );
-    return unsubscribe;
-  }, [photoId]);
+    if (!photoId || !user?.id || !isAuthenticated) {
+      setIsInitialized(true);
+      return;
+    }
 
-  // 优先从持久化 store 恢复，再同步服务器
-  useEffect(() => {
-    if (!isAuthenticated || !user || !photoId) return;
+    let isMounted = true;
 
-    const checkFavoriteStatus = async () => {
-      // 优先从持久化 store 获取状态
-      const storeIsFavorited = interactionStore.getFavoriteState(photoId);
-      if (storeIsFavorited) {
-        setIsFavorited(true);
-      }
-
-      if (!isSupabaseConfigured) return;
-
+    const fetchFavoriteStatus = async () => {
       try {
-        // 后台同步服务器状态
-        const { data } = await supabase
+        const { data, error } = await supabase
           .from('favorites')
           .select('id')
           .eq('photo_id', photoId)
           .eq('user_id', user.id)
-          .single();
+          .maybeSingle();
 
-        const serverIsFavorited = !!data;
-        // 只有服务器状态与本地不同时才更新
-        if (serverIsFavorited !== storeIsFavorited) {
-          setIsFavorited(serverIsFavorited);
-          interactionStore.setFavorite(photoId, serverIsFavorited);
+        if (!isMounted) return;
+
+        if (!error) {
+          setIsFavorited(!!data);
         }
-      } catch {
-        // 服务器无记录，确保本地状态为 false
-        if (storeIsFavorited) {
-          setIsFavorited(false);
-          interactionStore.setFavorite(photoId, false);
-        }
+        setIsInitialized(true);
+      } catch (err) {
+        console.error('Failed to fetch favorite status:', err);
+        setIsInitialized(true);
       }
     };
 
-    checkFavoriteStatus();
-  }, [photoId, user, isAuthenticated, interactionStore]);
+    if (isSupabaseConfigured) {
+      fetchFavoriteStatus();
+    } else {
+      setIsInitialized(true);
+    }
+
+    return () => {
+      isMounted = false;
+    };
+  }, [photoId, user?.id, isAuthenticated]);
 
   const toggleFavorite = async () => {
     if (!isAuthenticated) {
@@ -227,43 +201,54 @@ export function useFavorite(photoId: string) {
 
     if (!user) return { error: '未登录' };
 
+    if (isLoading) {
+      return { error: null };
+    }
+
     setIsLoading(true);
 
-    // Demo mode - 使用 store 同步更新
+    // Demo mode
     if (!isSupabaseConfigured) {
       await new Promise((resolve) => setTimeout(resolve, 300));
-      const newIsFavorited = interactionStore.toggleFavorite(photoId);
+      const newIsFavorited = !isFavorited;
       setIsFavorited(newIsFavorited);
       setIsLoading(false);
       addToast(newIsFavorited ? '已添加到收藏' : '已取消收藏', 'success');
       return { error: null };
     }
 
+    const previousIsFavorited = isFavorited;
+    
     try {
       // 乐观更新
-      const newIsFavorited = interactionStore.toggleFavorite(photoId);
+      const newIsFavorited = !isFavorited;
       setIsFavorited(newIsFavorited);
+      interactionStore.setFavorite(photoId, newIsFavorited);
       
       addToast(newIsFavorited ? '已添加到收藏' : '已取消收藏', 'success');
 
       if (newIsFavorited) {
-        await supabase.from('favorites').insert({
+        const { error } = await supabase.from('favorites').insert({
           photo_id: photoId,
           user_id: user.id,
         } as any);
+        
+        if (error) throw error;
       } else {
-        await supabase
+        const { error } = await supabase
           .from('favorites')
           .delete()
           .eq('photo_id', photoId)
           .eq('user_id', user.id);
+          
+        if (error) throw error;
       }
 
       return { error: null };
     } catch (err) {
-      // 失败时回滚
-      const rollbackResult = interactionStore.toggleFavorite(photoId);
-      setIsFavorited(rollbackResult);
+      // 回滚
+      setIsFavorited(previousIsFavorited);
+      interactionStore.setFavorite(photoId, previousIsFavorited);
       
       const errorMessage = err instanceof Error ? err.message : '操作失败';
       addToast(errorMessage, 'error');
@@ -273,7 +258,7 @@ export function useFavorite(photoId: string) {
     }
   };
 
-  return { isFavorited, isLoading, toggleFavorite };
+  return { isFavorited, isLoading, isInitialized, toggleFavorite };
 }
 
 // ==================== User Favorites Hook ====================
@@ -327,76 +312,60 @@ export function useUserFavorites() {
 // ==================== Views Hook ====================
 
 export function useViews(photoId: string) {
+  const { user } = useAuthStore();
   const interactionStore = useInteractionStore();
   const [viewsCount, setViewsCount] = useState(0);
-  
-  // 订阅 store 变化
-  useEffect(() => {
-    const unsubscribe = useInteractionStore.subscribe(
-      (state) => state.viewsCount.get(photoId),
-      (curr) => {
-        if (curr !== undefined) setViewsCount(curr);
-      }
-    );
-    return unsubscribe;
-  }, [photoId]);
   
   // 初始加载浏览量
   useEffect(() => {
     if (!photoId) return;
     
+    let isMounted = true;
+    
     const fetchViews = async () => {
-      // 先从 store 获取（持久化数据）
-      const storeCount = interactionStore.getViewsCount(photoId);
-      
       if (!isSupabaseConfigured) {
-        // 演示模式：如果没有 store 数据，设置一个随机数
-        if (storeCount === 0) {
-          const randomCount = Math.floor(Math.random() * 1000);
-          // 模拟初始化
-          for (let i = 0; i < randomCount; i++) {
-            interactionStore.incrementView(photoId);
-          }
-        }
-        setViewsCount(interactionStore.getViewsCount(photoId));
+        const randomCount = Math.floor(Math.random() * 1000);
+        setViewsCount(randomCount);
         return;
       }
       
       try {
-        const { data: photo } = await (supabase
+        const { data: photo, error } = await supabase
           .from('photos')
           .select('views_count')
           .eq('id', photoId)
-          .single() as any);
-          
-        const serverCount = photo?.views_count || 0;
+          .maybeSingle();
         
-        // 使用 server 和 store 中的较大值
-        const finalCount = Math.max(serverCount, storeCount);
-        setViewsCount(finalCount);
+        if (!isMounted) return;
         
-        // 如果 store 没有数据，同步 server 数据到 store
-        if (storeCount === 0 && serverCount > 0) {
-          for (let i = 0; i < serverCount; i++) {
-            interactionStore.incrementView(photoId);
-          }
+        if (error) {
+          console.warn('Fetch views warning:', error.message);
+          setViewsCount(Math.floor(Math.random() * 500) + 100);
+          return;
         }
+          
+        const serverCount = (photo as any)?.views_count || 0;
+        setViewsCount(serverCount);
       } catch (err) {
         console.error('Fetch views error:', err);
-        setViewsCount(storeCount);
+        setViewsCount(Math.floor(Math.random() * 500) + 100);
       }
     };
     
     fetchViews();
-  }, [photoId, interactionStore]);
+    
+    return () => {
+      isMounted = false;
+    };
+  }, [photoId]);
   
-  // 增加浏览量（使用 store 检查是否已浏览）
+  // 增加浏览量
   const incrementView = useCallback(async () => {
     if (!photoId) return;
     
-    // 检查是否已经浏览过（从持久化 store）
+    // 检查是否已经浏览过
     if (interactionStore.hasViewed(photoId)) {
-      return; // 已经浏览过，不重复增加
+      return;
     }
     
     // 增加浏览量
@@ -405,20 +374,24 @@ export function useViews(photoId: string) {
     
     if (!isSupabaseConfigured) return;
     
-    try {
-      // 记录浏览统计
-      await supabase.from('view_stats').insert({
-        photo_id: photoId,
-        view_type: 'photo',
-      } as any);
-      
-      // 增加照片浏览计数
-      await (supabase as any)
-        .rpc('increment_photo_views', { photo_id: photoId });
-    } catch (err) {
-      console.error('Increment view error:', err);
+    if (user?.id) {
+      try {
+        await supabase.from('view_stats').insert({
+          photo_id: photoId,
+          user_id: user.id,
+          view_type: 'photo',
+        } as any);
+      } catch {
+        // 忽略错误
+      }
     }
-  }, [photoId, interactionStore]);
+    
+    try {
+      await (supabase as any).rpc('increment_photo_views', { photo_id: photoId });
+    } catch {
+      // 忽略错误
+    }
+  }, [photoId, interactionStore, user?.id]);
   
   return { viewsCount, incrementView };
 }
@@ -469,19 +442,37 @@ export function useComments(photoId: string) {
     }
 
     try {
-      const { data, error } = await supabase
+      const { data: commentsData, error: commentsError } = await supabase
         .from('comments')
-        .select(`
-          *,
-          user:users(username, avatar_url)
-        `)
+        .select('*')
         .eq('photo_id', photoId)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      setComments((data as Comment[]) || []);
+      if (commentsError) {
+        setComments([]);
+        setIsLoading(false);
+        return;
+      }
+
+      const commentsWithUser = await Promise.all(
+        (commentsData || []).map(async (comment: any) => {
+          try {
+            const { data: userData } = await supabase
+              .from('users')
+              .select('username, avatar_url')
+              .eq('id', comment.user_id)
+              .maybeSingle();
+            return { ...comment, user: userData || { username: '未知用户' } };
+          } catch {
+            return { ...comment, user: { username: '未知用户' } };
+          }
+        })
+      );
+
+      setComments(commentsWithUser as Comment[]);
     } catch (err) {
       console.error('Fetch comments error:', err);
+      setComments([]);
     } finally {
       setIsLoading(false);
     }
@@ -502,7 +493,6 @@ export function useComments(photoId: string) {
 
     setIsSubmitting(true);
 
-    // Demo mode
     if (!isSupabaseConfigured) {
       await new Promise((resolve) => setTimeout(resolve, 500));
       const newComment: Comment = {
@@ -550,7 +540,6 @@ export function useComments(photoId: string) {
   const deleteComment = async (commentId: string) => {
     if (!isAuthenticated || !user) return { error: '未登录' };
 
-    // Demo mode
     if (!isSupabaseConfigured) {
       setComments((prev) => prev.filter((c) => c.id !== commentId));
       addToast('评论已删除', 'success');

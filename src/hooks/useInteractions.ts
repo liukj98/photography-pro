@@ -547,25 +547,51 @@ export function useComments(photoId: string) {
     }
 
     try {
-      const { data, error } = await supabase
+      console.log('[addComment] 开始发布评论, photoId:', photoId, 'userId:', user.id);
+      
+      // 先插入评论
+      const { data: commentData, error: insertError } = await supabase
         .from('comments')
         .insert({
           photo_id: photoId,
           user_id: user.id,
           content: content.trim(),
         } as any)
-        .select(`
-          *,
-          user:users(username, avatar_url)
-        `)
+        .select('*')
         .single();
 
-      if (error) throw error;
+      console.log('[addComment] 插入结果:', { commentData, insertError });
 
-      setComments((prev) => [data as Comment, ...prev]);
+      if (insertError) {
+        console.error('[addComment] 插入错误:', insertError);
+        throw insertError;
+      }
+
+      // 再单独获取用户信息
+      let userData: { username: string; avatar_url?: string } | null = null;
+      if (commentData) {
+        const { data: userInfo } = await supabase
+          .from('users')
+          .select('username, avatar_url')
+          .eq('id', (commentData as any).user_id)
+          .maybeSingle();
+        userData = userInfo;
+      }
+
+      const newComment: Comment = {
+        id: (commentData as any).id,
+        photo_id: (commentData as any).photo_id,
+        user_id: (commentData as any).user_id,
+        content: (commentData as any).content,
+        created_at: (commentData as any).created_at,
+        user: userData || { username: user.username },
+      };
+
+      setComments((prev) => [newComment, ...prev]);
       addToast('评论发布成功', 'success');
       return { error: null };
     } catch (err) {
+      console.error('[addComment] 异常:', err);
       const errorMessage = err instanceof Error ? err.message : '发布失败';
       addToast(errorMessage, 'error');
       return { error: errorMessage };

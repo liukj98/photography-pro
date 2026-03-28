@@ -197,15 +197,15 @@ export function usePhoto(photoId: string | undefined) {
   return { photo, isLoading, error };
 }
 
-export function useUserPhotos(userId?: string) {
+export function useUserPhotos(username?: string) {
   const { user: currentUser } = useAuthStore();
-  const targetUserId = userId || currentUser?.id;
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const fetchUserPhotos = useCallback(async () => {
-    if (!targetUserId) {
+    // 如果没有传入用户名且未登录，跳过
+    if (!username && !currentUser?.id) {
       setIsLoading(false);
       return;
     }
@@ -221,11 +221,37 @@ export function useUserPhotos(userId?: string) {
     }
 
     try {
-      const { data, error: fetchError } = await supabase
-        .from('photos')
-        .select('*')
-        .eq('user_id', targetUserId)
-        .order('created_at', { ascending: false });
+      let query;
+
+      if (username) {
+        // 通过用户名查询：先查用户 ID，再查作品
+        const { data: userData, error: userError } = await supabase
+          .from('users')
+          .select('id')
+          .eq('username', username)
+          .single();
+
+        if (userError || !userData) {
+          setPhotos([]);
+          setIsLoading(false);
+          return;
+        }
+
+        query = supabase
+          .from('photos')
+          .select('*')
+          .eq('user_id', (userData as { id: string }).id)
+          .order('created_at', { ascending: false });
+      } else {
+        // 使用当前登录用户 ID 查询
+        query = supabase
+          .from('photos')
+          .select('*')
+          .eq('user_id', currentUser!.id)
+          .order('created_at', { ascending: false });
+      }
+
+      const { data, error: fetchError } = await query;
 
       if (fetchError) throw fetchError;
       setPhotos(data || []);
@@ -234,7 +260,7 @@ export function useUserPhotos(userId?: string) {
     } finally {
       setIsLoading(false);
     }
-  }, [targetUserId]);
+  }, [username, currentUser?.id]);
 
   useEffect(() => {
     fetchUserPhotos();

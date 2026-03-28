@@ -8,7 +8,6 @@ import { MasonryGrid } from '../components/ui/MasonryGrid';
 import { Search, Filter, Image as ImageIcon, Loader2, Heart, Eye, X, Expand } from 'lucide-react';
 import { usePhotos } from '../hooks/usePhotos';
 import { useLightbox } from '../hooks/useLightbox';
-import { useInteractionStore } from '../stores/interactionStore';
 import { formatNumber } from '../lib/utils';
 import type { PhotoCategory } from '../types';
 
@@ -41,10 +40,26 @@ export function Explore() {
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
-  const { photos, isLoading, error, hasMore, loadMore } = usePhotos({
+  const { photos, isLoading, error, hasMore, loadMore, refetch } = usePhotos({
     category: selectedCategory,
     limit: 12,
   });
+
+  // 当页面重新获得焦点时刷新数据（从详情页返回时）
+  useEffect(() => {
+    // 初始挂载时刷新一次
+    refetch();
+    
+    // 页面可见性变化时刷新
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        refetch();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // 只在挂载时执行一次
 
   // Filter photos by debounced search query
   const filteredPhotos = useMemo(() => {
@@ -332,12 +347,9 @@ export function Explore() {
 const ASPECT_RATIOS = ['aspect-[4/3]', 'aspect-[3/4]', 'aspect-square', 'aspect-[4/5]', 'aspect-[5/4]'];
 
 const PhotoCard = forwardRef<HTMLDivElement, { photo: any; onOpenLightbox: () => void }>(({ photo, onOpenLightbox }, ref) => {
-  const interactionStore = useInteractionStore();
-  
-  // 订阅全局状态
-  const likeState = interactionStore.getLikeState(photo.id);
-  const viewsCount = interactionStore.getViewsCount(photo.id) || photo.views_count;
-  const likesCount = likeState.count || photo.likes_count;
+  // 直接使用 photo 中的数据，不再从 store 获取
+  const viewsCount = photo.views_count || 0;
+  const likesCount = photo.likes_count || 0;
   
   // 根据图片ID生成动态长宽比
   const aspectRatio = ASPECT_RATIOS[photo.id.charCodeAt(0) % ASPECT_RATIOS.length];

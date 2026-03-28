@@ -152,9 +152,13 @@ export function usePhotos(options: UsePhotosOptions = {}): UsePhotosReturn {
             }
           }
           
+          // 确保 views_count 存在，如果没有则使用 photo 中的值或默认 0
+          const viewsCount = photo.views_count ?? 0;
+          
           return {
             ...photo,
             likes_count: likesCount,
+            views_count: viewsCount,
             user: userData || undefined,
           };
         })

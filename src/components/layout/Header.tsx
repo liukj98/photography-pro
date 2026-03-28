@@ -74,7 +74,12 @@ export function Header() {
               <>
                 <Link
                   to={`/u/${user?.username}`}
-                  className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-text-secondary hover:text-text-primary rounded-xl hover:bg-surface transition-all"
+                  className={cn(
+                    'flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-xl transition-all',
+                    location.pathname.startsWith('/u/')
+                      ? 'text-primary bg-primary/10'
+                      : 'text-text-secondary hover:text-text-primary hover:bg-surface'
+                  )}
                 >
                   {user?.avatar_url ? (
                     <img
@@ -89,10 +94,16 @@ export function Header() {
                   )}
                   <span>{user?.username}</span>
                 </Link>
-                <Link to="/settings">
-                  <Button variant="ghost" size="sm">
-                    设置
-                  </Button>
+                <Link 
+                  to="/settings"
+                  className={cn(
+                    'px-4 py-2 text-sm font-medium rounded-xl transition-all',
+                    isActive('/settings')
+                      ? 'text-primary bg-primary/10'
+                      : 'text-text-secondary hover:text-text-primary hover:bg-surface'
+                  )}
+                >
+                  设置
                 </Link>
                 <Button
                   variant="ghost"
@@ -155,7 +166,12 @@ export function Header() {
               <>
                 <Link
                   to={`/u/${user?.username}`}
-                  className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-text-secondary hover:text-text-primary hover:bg-surface rounded-xl transition-all"
+                  className={cn(
+                    'flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-xl transition-all',
+                    location.pathname.startsWith('/u/')
+                      ? 'text-primary bg-primary/10'
+                      : 'text-text-secondary hover:text-text-primary hover:bg-surface'
+                  )}
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
                   <User className="w-4 h-4" />

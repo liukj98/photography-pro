@@ -2,6 +2,7 @@ import { useState, useRef } from 'react';
 import { Card, CardContent, CardHeader } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
+import { ThemeSwitcher } from '../components/ui/ThemeSwitcher';
 import { useAuthStore } from '../stores/authStore';
 import { useToastStore } from '../stores/toastStore';
 import { uploadImage } from '../lib/storage';
@@ -174,6 +175,23 @@ export function Settings() {
                 onChange={handleAvatarChange}
                 className="hidden"
               />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Theme Section */}
+        <Card className="mb-6">
+          <CardHeader>
+            <h2 className="text-lg font-semibold text-text-primary">
+              主题设置
+            </h2>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              <p className="text-text-secondary text-sm">
+                选择你喜欢的主题外观
+              </p>
+              <ThemeSwitcher />
             </div>
           </CardContent>
         </Card>

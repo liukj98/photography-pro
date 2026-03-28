@@ -17,6 +17,7 @@ import { PhotoDetail } from './pages/PhotoDetail';
 import { NotFound } from './pages/NotFound';
 import { ResetPassword } from './pages/ResetPassword';
 import { useAuthStore } from './stores/authStore';
+import { initTheme } from './stores/themeStore';
 import './index.css';
 
 // Protected Route Component
@@ -59,6 +60,7 @@ function App() {
 
   useEffect(() => {
     fetchUser();
+    initTheme();
   }, [fetchUser]);
 
   return (

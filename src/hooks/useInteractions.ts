@@ -287,14 +287,51 @@ export function useUserFavorites() {
       const { data, error } = await supabase
         .from('favorites')
         .select(`
-          *,
-          photo:photos(*)
+          id,
+          created_at,
+          photo:photos(
+            id,
+            title,
+            thumbnail_url,
+            user_id,
+            created_at,
+            user:users(id, username, avatar_url)
+          )
         `)
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setFavorites(data || []);
+      
+      // 为每个收藏的照片获取点赞数
+      const favoritesWithLikes = await Promise.all(
+        (data || []).map(async (fav: any) => {
+          try {
+            const { count } = await supabase
+              .from('likes')
+              .select('*', { count: 'exact', head: true })
+              .eq('photo_id', fav.photo?.id);
+            
+            return {
+              ...fav,
+              photo: {
+                ...fav.photo,
+                likes_count: count || 0,
+              },
+            };
+          } catch {
+            return {
+              ...fav,
+              photo: {
+                ...fav.photo,
+                likes_count: 0,
+              },
+            };
+          }
+        })
+      );
+      
+      setFavorites(favoritesWithLikes);
     } catch (err) {
       console.error('Fetch favorites error:', err);
     } finally {

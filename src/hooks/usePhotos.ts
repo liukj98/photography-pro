@@ -173,17 +173,28 @@ export function usePhoto(photoId: string | undefined) {
       }
 
       try {
-        const { data, error: fetchError } = await supabase
+        // 先获取照片基本信息
+        const { data: photoData, error: photoError } = await supabase
           .from('photos')
-          .select(`
-            *,
-            user:users(id, username, avatar_url)
-          `)
+          .select('*')
           .eq('id', photoId)
           .single();
 
-        if (fetchError) throw fetchError;
-        setPhoto(data);
+        if (photoError) throw photoError;
+
+        // 再单独获取用户信息，避免 RLS 权限问题
+        let userData: { id: string; username: string; avatar_url?: string } | null = null;
+        const photo = photoData as Photo;
+        if (photo?.user_id) {
+          const { data: user } = await supabase
+            .from('users')
+            .select('id, username, avatar_url')
+            .eq('id', photo.user_id)
+            .single();
+          userData = user;
+        }
+
+        setPhoto({ ...photo, user: userData || undefined });
       } catch (err) {
         setError(err instanceof Error ? err.message : '获取作品失败');
       } finally {

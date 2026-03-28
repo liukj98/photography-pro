@@ -5,14 +5,20 @@ import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { Search, Edit, Trash2, Eye, Grid, List, Loader2, Camera } from 'lucide-react';
 import { useUserPhotos } from '../hooks/usePhotos';
+import { useToastStore } from '../stores/toastStore';
 import type { Photo } from '../types';
 
 export function Manage() {
   const { photos, isLoading, error, refetch, deletePhoto } = useUserPhotos();
+  const { addToast } = useToastStore();
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedPhotos, setSelectedPhotos] = useState<string[]>([]);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const handleEdit = (_photo: Photo) => {
+    addToast('编辑功能正在开发中，敬请期待', 'info');
+  };
 
   const filteredPhotos = photos.filter((photo) =>
     photo.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -150,7 +156,12 @@ export function Manage() {
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                   <div className="absolute bottom-0 left-0 right-0 p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-300 flex gap-2">
-                    <Button variant="secondary" size="sm" className="flex-1">
+                    <Button 
+                      variant="secondary" 
+                      size="sm" 
+                      className="flex-1"
+                      onClick={() => handleEdit(photo)}
+                    >
                       <Edit className="w-4 h-4 mr-2" />
                       编辑
                     </Button>
@@ -210,7 +221,10 @@ export function Manage() {
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <button className="p-2 rounded-lg hover:bg-surface transition-colors">
+                    <button 
+                      className="p-2 rounded-lg hover:bg-surface transition-colors"
+                      onClick={() => handleEdit(photo)}
+                    >
                       <Edit className="w-4 h-4 text-text-secondary" />
                     </button>
                     <button

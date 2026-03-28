@@ -6,7 +6,7 @@ import { FavoriteButton } from '../components/interactions/FavoriteButton';
 import { CommentSection } from '../components/interactions/CommentSection';
 import { usePhoto } from '../hooks/usePhotos';
 import { useViews } from '../hooks/useInteractions';
-import { ArrowLeft, Eye, Camera, Aperture } from 'lucide-react';
+import { ArrowLeft, Eye, Camera, Aperture, Timer, Gauge, Move, Focus } from 'lucide-react';
 import { formatDate, formatNumber } from '../lib/utils';
 import { Loader2 } from 'lucide-react';
 import { useEffect } from 'react';
@@ -142,14 +142,38 @@ export function PhotoDetail() {
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     {photo.exif_data.camera && (
                       <div className="flex items-center gap-2 text-text-secondary">
-                        <Camera className="w-4 h-4" />
-                        <span>{photo.exif_data.camera}</span>
+                        <Camera className="w-4 h-4 text-text-muted flex-shrink-0" />
+                        <span className="truncate">{photo.exif_data.camera}</span>
+                      </div>
+                    )}
+                    {photo.exif_data.lens && (
+                      <div className="flex items-center gap-2 text-text-secondary">
+                        <Focus className="w-4 h-4 text-text-muted flex-shrink-0" />
+                        <span className="truncate">{photo.exif_data.lens}</span>
                       </div>
                     )}
                     {photo.exif_data.aperture && (
                       <div className="flex items-center gap-2 text-text-secondary">
-                        <Aperture className="w-4 h-4" />
+                        <Aperture className="w-4 h-4 text-text-muted flex-shrink-0" />
                         <span>f/{photo.exif_data.aperture}</span>
+                      </div>
+                    )}
+                    {photo.exif_data.shutter && (
+                      <div className="flex items-center gap-2 text-text-secondary">
+                        <Timer className="w-4 h-4 text-text-muted flex-shrink-0" />
+                        <span>{photo.exif_data.shutter}s</span>
+                      </div>
+                    )}
+                    {photo.exif_data.iso && (
+                      <div className="flex items-center gap-2 text-text-secondary">
+                        <Gauge className="w-4 h-4 text-text-muted flex-shrink-0" />
+                        <span>ISO {photo.exif_data.iso}</span>
+                      </div>
+                    )}
+                    {photo.exif_data.focal_length && (
+                      <div className="flex items-center gap-2 text-text-secondary">
+                        <Move className="w-4 h-4 text-text-muted flex-shrink-0" />
+                        <span>{photo.exif_data.focal_length}mm</span>
                       </div>
                     )}
                   </div>

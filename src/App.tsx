@@ -15,6 +15,7 @@ import { Settings } from './pages/Settings';
 import { Favorites } from './pages/Favorites';
 import { PhotoDetail } from './pages/PhotoDetail';
 import { NotFound } from './pages/NotFound';
+import { ResetPassword } from './pages/ResetPassword';
 import { useAuthStore } from './stores/authStore';
 import './index.css';
 
@@ -112,6 +113,14 @@ function App() {
           element={
             <AuthLayout>
               <Register />
+            </AuthLayout>
+          }
+        />
+        <Route
+          path="/reset-password"
+          element={
+            <AuthLayout>
+              <ResetPassword />
             </AuthLayout>
           }
         />

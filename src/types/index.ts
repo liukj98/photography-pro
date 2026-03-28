@@ -78,7 +78,7 @@ export interface UserStats {
   total_views: number;
   total_photos: number;
   views_by_day: { date: string; count: number }[];
-  popular_photos: { photo_id: string; title: string; views: number }[];
+  popular_photos: { photo_id: string; title: string; views: number; category?: string }[];
 }
 
 // UI Types

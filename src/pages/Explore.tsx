@@ -2,8 +2,12 @@ import { useState, useRef, useCallback, forwardRef, useEffect, useMemo } from 'r
 import { Link } from 'react-router-dom';
 import { Card, CardContent } from '../components/ui/Card';
 import { Input } from '../components/ui/Input';
-import { Search, Filter, Image as ImageIcon, Loader2, Heart, Eye, X } from 'lucide-react';
+import { Lightbox } from '../components/ui/Lightbox';
+import type { LightboxImage } from '../components/ui/Lightbox';
+import { MasonryGrid } from '../components/ui/MasonryGrid';
+import { Search, Filter, Image as ImageIcon, Loader2, Heart, Eye, X, Expand } from 'lucide-react';
 import { usePhotos } from '../hooks/usePhotos';
+import { useLightbox } from '../hooks/useLightbox';
 import { useInteractionStore } from '../stores/interactionStore';
 import { formatNumber } from '../lib/utils';
 import type { PhotoCategory } from '../types';
@@ -27,6 +31,7 @@ export function Explore() {
   const observerRef = useRef<IntersectionObserver | null>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const suggestionsRef = useRef<HTMLDivElement>(null);
+  const lightbox = useLightbox();
 
   // Debounce search query (300ms)
   useEffect(() => {
@@ -143,6 +148,13 @@ export function Explore() {
 
   return (
     <div className="min-h-screen py-8">
+      <Lightbox
+        images={lightbox.images}
+        currentIndex={lightbox.currentIndex}
+        isOpen={lightbox.isOpen}
+        onClose={lightbox.close}
+        onNavigate={lightbox.navigate}
+      />
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-8">
@@ -259,17 +271,26 @@ export function Explore() {
           </div>
         )}
 
-        {/* Photo Grid */}
+        {/* Photo Grid - Masonry Layout */}
         {filteredPhotos.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <MasonryGrid columns={{ sm: 2, md: 2, lg: 3 }} gap={24}>
             {filteredPhotos.map((photo, index) => (
               <PhotoCard 
                 key={photo.id} 
                 photo={photo}
                 ref={index === filteredPhotos.length - 1 ? lastPhotoRef : null}
+                onOpenLightbox={() => {
+                  const imgs: LightboxImage[] = filteredPhotos.map((p) => ({
+                    src: p.image_url,
+                    alt: p.title,
+                    title: p.title,
+                  }));
+                  lightbox.setImages(imgs);
+                  lightbox.open(index, imgs);
+                }}
               />
             ))}
-          </div>
+          </MasonryGrid>
         ) : (
           <div className="text-center py-20">
             <ImageIcon className="w-16 h-16 text-text-muted mx-auto mb-4" />
@@ -307,8 +328,10 @@ export function Explore() {
   );
 }
 
-// 作品卡片组件（支持数据同步）
-const PhotoCard = forwardRef<HTMLDivElement, { photo: any }>(({ photo }, ref) => {
+// 作品卡片组件（支持数据同步 + 瀑布流动态高度）
+const ASPECT_RATIOS = ['aspect-[4/3]', 'aspect-[3/4]', 'aspect-square', 'aspect-[4/5]', 'aspect-[5/4]'];
+
+const PhotoCard = forwardRef<HTMLDivElement, { photo: any; onOpenLightbox: () => void }>(({ photo, onOpenLightbox }, ref) => {
   const interactionStore = useInteractionStore();
   
   // 订阅全局状态
@@ -316,28 +339,41 @@ const PhotoCard = forwardRef<HTMLDivElement, { photo: any }>(({ photo }, ref) =>
   const viewsCount = interactionStore.getViewsCount(photo.id) || photo.views_count;
   const likesCount = likeState.count || photo.likes_count;
   
+  // 根据图片ID生成动态长宽比
+  const aspectRatio = ASPECT_RATIOS[photo.id.charCodeAt(0) % ASPECT_RATIOS.length];
+  
   return (
     <div ref={ref} data-testid="photo-card">
       <Card isHoverable className="group">
-        <Link to={`/photo/${photo.id}`}>
-          <div className="relative aspect-[4/3] overflow-hidden">
-            <img
-              src={photo.thumbnail_url}
-              alt={photo.title}
-              loading="lazy"
-              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-            <div className="absolute bottom-0 left-0 right-0 p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
-              <h3 className="text-white font-semibold truncate">
-                {photo.title}
-              </h3>
-              <p className="text-white/80 text-sm truncate">
-                {photo.description}
-              </p>
+        <div className="relative">
+          <Link to={`/photo/${photo.id}`}>
+            <div className={`relative ${aspectRatio} overflow-hidden`}>
+              <img
+                src={photo.thumbnail_url}
+                alt={photo.title}
+                loading="lazy"
+                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              <div className="absolute bottom-0 left-0 right-0 p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
+                <h3 className="text-white font-semibold truncate">
+                  {photo.title}
+                </h3>
+                <p className="text-white/80 text-sm truncate">
+                  {photo.description}
+                </p>
+              </div>
             </div>
-          </div>
-        </Link>
+          </Link>
+          {/* Lightbox button */}
+          <button
+            onClick={(e) => { e.preventDefault(); onOpenLightbox(); }}
+            className="absolute top-3 right-3 p-2 rounded-lg bg-black/40 text-white/70 opacity-0 group-hover:opacity-100 hover:bg-black/60 hover:text-white transition-all backdrop-blur-sm"
+            title="全屏预览"
+          >
+            <Expand className="w-4 h-4" />
+          </button>
+        </div>
         <CardContent className="p-4">
           <div className="flex items-center justify-between">
             <Link

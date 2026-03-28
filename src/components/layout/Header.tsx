@@ -1,4 +1,4 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../../stores/authStore';
 import { Button } from '../ui/Button';
 import { Camera, User, LogOut, Menu, X } from 'lucide-react';
@@ -8,6 +8,7 @@ import { cn } from '../../lib/utils';
 export function Header() {
   const { user, isAuthenticated, logout } = useAuthStore();
   const navigate = useNavigate();
+  const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const handleLogout = async () => {
@@ -26,6 +27,14 @@ export function Header() {
         ]
       : []),
   ];
+
+  // 检查链接是否激活
+  const isActive = (href: string) => {
+    if (href === '/') {
+      return location.pathname === '/';
+    }
+    return location.pathname.startsWith(href);
+  };
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-border bg-background/80 backdrop-blur-xl">
@@ -47,7 +56,12 @@ export function Header() {
               <Link
                 key={item.href}
                 to={item.href}
-                className="px-4 py-2 text-sm font-medium text-text-secondary hover:text-text-primary rounded-xl hover:bg-surface transition-all"
+                className={cn(
+                  'px-4 py-2 text-sm font-medium rounded-xl transition-all',
+                  isActive(item.href)
+                    ? 'text-primary bg-primary/10'
+                    : 'text-text-secondary hover:text-text-primary hover:bg-surface'
+                )}
               >
                 {item.label}
               </Link>
@@ -125,7 +139,12 @@ export function Header() {
               <Link
                 key={item.href}
                 to={item.href}
-                className="block px-4 py-2 text-sm font-medium text-text-secondary hover:text-text-primary hover:bg-surface rounded-xl transition-all"
+                className={cn(
+                  'block px-4 py-2 text-sm font-medium rounded-xl transition-all',
+                  isActive(item.href)
+                    ? 'text-primary bg-primary/10'
+                    : 'text-text-secondary hover:text-text-primary hover:bg-surface'
+                )}
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 {item.label}

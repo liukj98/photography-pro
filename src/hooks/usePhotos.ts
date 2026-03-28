@@ -121,13 +121,53 @@ export function usePhotos(options: UsePhotosOptions = {}): UsePhotosReturn {
       }
 
       const newPhotos = data || [];
-      setPhotos(append ? [...photos, ...newPhotos] : newPhotos);
+      
+      // 获取每个照片的点赞数和用户信息
+      const photosWithDetails = await Promise.all(
+        newPhotos.map(async (photo: any) => {
+          // 获取点赞数
+          let likesCount = 0;
+          try {
+            const { count } = await supabase
+              .from('likes')
+              .select('*', { count: 'exact', head: true })
+              .eq('photo_id', photo.id);
+            likesCount = count || 0;
+          } catch {
+            // ignore
+          }
+          
+          // 获取用户信息
+          let userData = null;
+          if (photo.user_id) {
+            try {
+              const { data: user } = await supabase
+                .from('users')
+                .select('id, username, avatar_url')
+                .eq('id', photo.user_id)
+                .maybeSingle();
+              userData = user;
+            } catch {
+              // ignore
+            }
+          }
+          
+          return {
+            ...photo,
+            likes_count: likesCount,
+            user: userData || undefined,
+          };
+        })
+      );
+
+      setPhotos(prev => append ? [...prev, ...photosWithDetails] : photosWithDetails);
       setHasMore(newPhotos.length === limit);
     } catch (err) {
       setError(err instanceof Error ? err.message : '获取作品失败');
     } finally {
       setIsLoading(false);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId, category, limit]);
 
   useEffect(() => {

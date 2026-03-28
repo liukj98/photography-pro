@@ -118,7 +118,10 @@ function generateCommitMessage(files) {
     .map((f) => f.filePath)
     .filter((p) => !p.startsWith('playwright-report') && !p.endsWith('lock'))
     .slice(0, 5)
-    .map((p) => p.split('/').pop())
+    .map((p) => {
+      const parts = p.split('/');
+      return parts.length > 1 ? parts[parts.length - 2] + '/' + parts[parts.length - 1] : parts[0];
+    })
     .join(', ');
 
   const typeLabels = {

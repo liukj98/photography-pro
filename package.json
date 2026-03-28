@@ -13,7 +13,8 @@
     "harness:test:ui": "playwright test --ui",
     "harness:report": "playwright show-report",
     "harness:auto-test": "playwright test --reporter=list",
-    "harness:auto-fix": "node tests/auto-fix.cjs"
+    "harness:auto-fix": "node tests/auto-fix.cjs",
+    "auto-commit": "node scripts/auto-commit.cjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.100.1",

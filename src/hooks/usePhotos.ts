@@ -309,7 +309,30 @@ export function useUserPhotos(username?: string) {
       const { data, error: fetchError } = await query;
 
       if (fetchError) throw fetchError;
-      setPhotos(data || []);
+      
+      // 获取每个照片的点赞数
+      const photosWithLikes = await Promise.all(
+        (data || []).map(async (photo: any) => {
+          let likesCount = 0;
+          try {
+            const { count } = await supabase
+              .from('likes')
+              .select('*', { count: 'exact', head: true })
+              .eq('photo_id', photo.id);
+            likesCount = count || 0;
+          } catch {
+            // ignore
+          }
+          
+          return {
+            ...photo,
+            likes_count: likesCount,
+            views_count: photo.views_count ?? 0,
+          };
+        })
+      );
+      
+      setPhotos(photosWithLikes);
     } catch (err) {
       setError(err instanceof Error ? err.message : '获取作品失败');
     } finally {

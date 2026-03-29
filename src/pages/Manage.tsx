@@ -5,19 +5,36 @@ import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { Search, Edit, Trash2, Eye, Grid, List, Loader2, Camera } from 'lucide-react';
 import { useUserPhotos } from '../hooks/usePhotos';
-import { useToastStore } from '../stores/toastStore';
+
+import { EditPhotoDialog } from '../components/EditPhotoDialog';
 import type { Photo } from '../types';
 
 export function Manage() {
-  const { photos, isLoading, error, refetch, deletePhoto } = useUserPhotos();
-  const { addToast } = useToastStore();
+  const { photos, isLoading, error, refetch, deletePhoto, updatePhoto } = useUserPhotos();
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedPhotos, setSelectedPhotos] = useState<string[]>([]);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [editingPhoto, setEditingPhoto] = useState<Photo | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
 
-  const handleEdit = (_photo: Photo) => {
-    addToast('编辑功能正在开发中，敬请期待', 'info');
+  const handleEdit = (photo: Photo) => {
+    setEditingPhoto(photo);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleSaveEdit = async (photoId: string, data: {
+    title: string;
+    description: string;
+    category: string;
+    tags: string[];
+    is_public: boolean;
+  }) => {
+    setIsUpdating(true);
+    const result = await updatePhoto(photoId, data);
+    setIsUpdating(false);
+    return result;
   };
 
   const filteredPhotos = photos.filter((photo) =>
@@ -269,6 +286,15 @@ export function Manage() {
           </div>
         )}
       </div>
+
+      {/* Edit Dialog */}
+      <EditPhotoDialog
+        photo={editingPhoto}
+        isOpen={isEditDialogOpen}
+        onClose={() => setIsEditDialogOpen(false)}
+        onSave={handleSaveEdit}
+        isLoading={isUpdating}
+      />
     </div>
   );
 }

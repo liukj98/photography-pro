@@ -367,7 +367,44 @@ export function useUserPhotos(username?: string) {
     }
   };
 
-  return { photos, isLoading, error, refetch: fetchUserPhotos, deletePhoto };
+  const updatePhoto = async (photoId: string, updateData: {
+    title: string;
+    description: string;
+    category: string;
+    tags: string[];
+    is_public: boolean;
+  }) => {
+    const { addToast } = useToastStore.getState();
+    
+    if (!isSupabaseConfigured) {
+      setPhotos(photos.map((p) => 
+        p.id === photoId ? { ...p, ...updateData } as Photo : p
+      ));
+      addToast('作品已更新', 'success');
+      return { error: null };
+    }
+
+    try {
+      const { error } = await (supabase
+        .from('photos') as any)
+        .update(updateData)
+        .eq('id', photoId);
+      
+      if (error) throw error;
+      
+      setPhotos(photos.map((p) => 
+        p.id === photoId ? { ...p, ...updateData } as Photo : p
+      ));
+      addToast('作品已更新', 'success');
+      return { error: null };
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : '更新失败';
+      addToast(errorMessage, 'error');
+      return { error: errorMessage };
+    }
+  };
+
+  return { photos, isLoading, error, refetch: fetchUserPhotos, deletePhoto, updatePhoto };
 }
 
 export function useCreatePhoto() {

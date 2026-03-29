@@ -403,7 +403,7 @@ export function useCreatePhoto() {
       
       const { data, error } = await supabase
         .from('photos')
-        .insert(insertData as Record<string, unknown>)
+        .insert(insertData as any)
         .select()
         .single();
 

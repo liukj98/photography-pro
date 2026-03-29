@@ -124,7 +124,7 @@ export function useStats() {
         user_id: user.id,
         photo_id: photoId,
         view_type: viewType,
-      } as Record<string, unknown>);
+      } as any);
 
       // If viewing a photo, increment its view count
       if (viewType === 'photo' && photoId) {

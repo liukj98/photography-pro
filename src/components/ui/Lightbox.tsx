@@ -26,11 +26,50 @@ export function Lightbox({ images, currentIndex, isOpen, onClose, onNavigate }: 
   const containerRef = useRef<HTMLDivElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
 
+  // Define functions before they are used in effects
+  const resetView = useCallback(() => {
+    setZoom(1);
+    setPosition({ x: 0, y: 0 });
+  }, []);
+
+  const navigateTo = useCallback((index: number) => {
+    if (index < 0) index = images.length - 1;
+    if (index >= images.length) index = 0;
+    setActiveIndex(index);
+    onNavigate?.(index);
+    resetView();
+  }, [images.length, onNavigate, resetView]);
+
+  const handleZoom = useCallback((delta: number) => {
+    setZoom((prev) => {
+      const newZoom = Math.min(Math.max(prev + delta, 0.5), 5);
+      if (Math.abs(1 - newZoom) < 0.26) {
+        setPosition({ x: 0, y: 0 });
+      }
+      return newZoom;
+    });
+  }, []);
+
+  const toggleFullscreen = useCallback(async () => {
+    if (!containerRef.current) return;
+    try {
+      if (!document.fullscreenElement) {
+        await containerRef.current.requestFullscreen();
+        setIsFullscreen(true);
+      } else {
+        await document.exitFullscreen();
+        setIsFullscreen(false);
+      }
+    } catch {
+      // Fullscreen not supported
+    }
+  }, []);
+
   // Sync external currentIndex changes
   useEffect(() => {
     setActiveIndex(currentIndex);
     resetView();
-  }, [currentIndex, isOpen]);
+  }, [currentIndex, isOpen, resetView]);
 
   // Keyboard navigation
   useEffect(() => {
@@ -72,7 +111,7 @@ export function Lightbox({ images, currentIndex, isOpen, onClose, onNavigate }: 
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, activeIndex, images.length]);
+  }, [isOpen, activeIndex, images.length, onClose, navigateTo, handleZoom, resetView, toggleFullscreen]);
 
   // Lock body scroll when open
   useEffect(() => {
@@ -92,41 +131,6 @@ export function Lightbox({ images, currentIndex, isOpen, onClose, onNavigate }: 
       }
     };
   }, []);
-
-  const resetView = () => {
-    setZoom(1);
-    setPosition({ x: 0, y: 0 });
-  };
-
-  const navigateTo = useCallback((index: number) => {
-    if (index < 0) index = images.length - 1;
-    if (index >= images.length) index = 0;
-    setActiveIndex(index);
-    onNavigate?.(index);
-    resetView();
-  }, [images.length, onNavigate]);
-
-  const handleZoom = (delta: number) => {
-    setZoom((prev) => Math.min(Math.max(prev + delta, 0.5), 5));
-    if (Math.abs(1 - (zoom + delta)) < 0.26) {
-      setPosition({ x: 0, y: 0 });
-    }
-  };
-
-  const toggleFullscreen = async () => {
-    if (!containerRef.current) return;
-    try {
-      if (!document.fullscreenElement) {
-        await containerRef.current.requestFullscreen();
-        setIsFullscreen(true);
-      } else {
-        await document.exitFullscreen();
-        setIsFullscreen(false);
-      }
-    } catch {
-      // Fullscreen not supported
-    }
-  };
 
   // Handle fullscreen change event
   useEffect(() => {

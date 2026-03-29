@@ -145,7 +145,7 @@ export const useAuthStore = create<AuthStore>()(
               id: data.user.id,
               username: credentials.username,
               email: credentials.email,
-            } as Record<string, unknown>);
+            } as any);
 
             if (profileError) {
               console.error('Profile creation error:', profileError);

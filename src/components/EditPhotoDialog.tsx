@@ -54,27 +54,30 @@ export function EditPhotoDialog({
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Reset form when photo changes
+  // Reset form when photo changes or dialog opens
   useEffect(() => {
-    if (photo) {
-      setFormData({
-        title: photo.title,
-        description: photo.description || '',
-        category: photo.category,
-        tags: photo.tags?.join(', ') || '',
-        is_public: photo.is_public,
-        exif: {
-          camera: photo.exif_data?.camera || '',
-          lens: photo.exif_data?.lens || '',
-          aperture: photo.exif_data?.aperture || '',
-          shutter: photo.exif_data?.shutter || '',
-          iso: photo.exif_data?.iso?.toString() || '',
-          focal_length: photo.exif_data?.focal_length || '',
-        },
+    if (photo && isOpen) {
+      // Use requestAnimationFrame to avoid synchronous setState during render
+      requestAnimationFrame(() => {
+        setFormData({
+          title: photo.title,
+          description: photo.description || '',
+          category: photo.category,
+          tags: photo.tags?.join(', ') || '',
+          is_public: photo.is_public,
+          exif: {
+            camera: photo.exif_data?.camera || '',
+            lens: photo.exif_data?.lens || '',
+            aperture: photo.exif_data?.aperture || '',
+            shutter: photo.exif_data?.shutter || '',
+            iso: photo.exif_data?.iso?.toString() || '',
+            focal_length: photo.exif_data?.focal_length || '',
+          },
+        });
+        setErrors({});
       });
-      setErrors({});
     }
-  }, [photo]);
+  }, [photo?.id, isOpen]);
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};

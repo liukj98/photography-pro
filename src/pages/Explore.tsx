@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
+import { useState, useRef, useCallback, useEffect, useMemo, forwardRef } from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent } from '../components/ui/Card';
 import { Input } from '../components/ui/Input';
@@ -9,7 +9,7 @@ import { Search, Filter, Image as ImageIcon, Loader2, Heart, Eye, X, Expand } fr
 import { usePhotos } from '../hooks/usePhotos';
 import { useLightbox } from '../hooks/useLightbox';
 import { formatNumber } from '../lib/utils';
-import type { PhotoCategory } from '../types';
+import type { Photo, PhotoCategory } from '../types';
 
 const categories: { value: PhotoCategory | 'all'; label: string }[] = [
   { value: 'all', label: '全部' },
@@ -347,7 +347,12 @@ export function Explore() {
 // 作品卡片组件（支持数据同步 + 瀑布流动态高度）
 const ASPECT_RATIOS = ['aspect-[4/3]', 'aspect-[3/4]', 'aspect-square', 'aspect-[4/5]', 'aspect-[5/4]'];
 
-const PhotoCard = forwardRef<HTMLDivElement, { photo: any; onOpenLightbox: () => void }>(({ photo, onOpenLightbox }, ref) => {
+interface PhotoCardProps {
+  photo: Photo;
+  onOpenLightbox: () => void;
+}
+
+const PhotoCard = forwardRef<HTMLDivElement, PhotoCardProps>(({ photo, onOpenLightbox }, ref) => {
   // 直接使用 photo 中的数据，不再从 store 获取
   const viewsCount = photo.views_count || 0;
   const likesCount = photo.likes_count || 0;

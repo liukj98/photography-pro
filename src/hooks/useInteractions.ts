@@ -108,7 +108,7 @@ export function useLike(photoId: string) {
         const { error } = await supabase.from('likes').insert({
           photo_id: photoId,
           user_id: user.id,
-        } as Record<string, unknown>);
+        } as any);
         
         if (error) throw error;
       } else {
@@ -229,7 +229,7 @@ export function useFavorite(photoId: string) {
         const { error } = await supabase.from('favorites').insert({
           photo_id: photoId,
           user_id: user.id,
-        } as Record<string, unknown>);
+        } as any);
         
         if (error) throw error;
       } else {
@@ -414,7 +414,7 @@ export function useViews(photoId: string) {
           photo_id: photoId,
           user_id: user.id,
           view_type: 'photo',
-        } as Record<string, unknown>);
+        } as any);
       } catch {
         // 忽略错误
       }
@@ -554,7 +554,7 @@ export function useComments(photoId: string) {
           photo_id: photoId,
           user_id: user.id,
           content: content.trim(),
-        } as Record<string, unknown>)
+        } as any)
         .select('*')
         .single();
 

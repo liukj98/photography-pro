@@ -81,6 +81,19 @@ export interface UserStats {
   popular_photos: { photo_id: string; title: string; views: number; category?: string }[];
 }
 
+// Comment Types
+export interface Comment {
+  id: string;
+  photo_id: string;
+  user_id: string;
+  content: string;
+  created_at: string;
+  user?: {
+    username: string;
+    avatar_url?: string;
+  };
+}
+
 // UI Types
 export type ToastType = 'success' | 'error' | 'warning' | 'info';
 

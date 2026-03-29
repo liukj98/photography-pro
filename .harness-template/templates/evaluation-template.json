@@ -1,0 +1,64 @@
+{
+  "version": "1.0",
+  "sprint_id": "{N}",
+  "iteration": "{M}",
+  "timestamp": "{ISO8601 timestamp}",
+  "evaluator": "evaluator-v1",
+  "project_type": "toc",
+
+  "summary": {
+    "overall_score": 0.0,
+    "status": "PASS|PARTIAL|FAIL",
+    "verdict": "{一句话总结}"
+  },
+
+  "scores": {
+    "functional": { "score": 0.0, "max": 10, "weight": 0.30 },
+    "design": { "score": 0.0, "max": 10, "weight": 0.30 },
+    "code": { "score": 0.0, "max": 10, "weight": 0.15 },
+    "performance": { "score": 0.0, "max": 10, "weight": 0.15 },
+    "security": { "score": 0.0, "max": 10, "weight": 0.10 }
+  },
+
+  "findings": [
+    {
+      "id": "F-{NNN}",
+      "severity": "P0|P1|P2",
+      "category": "design|function|performance|security|toc-ux",
+      "title": "{问题标题}",
+      "description": "{问题描述}",
+      "evidence": {
+        "type": "screenshot|log|test-result",
+        "path": "{证据路径}"
+      },
+      "location": {
+        "file": "{文件路径}",
+        "line": {行号}
+      },
+      "recommendation": "{改进建议}"
+    }
+  ],
+
+  "toc_specific": {
+    "new_user_experience": { "score": 0.0, "notes": "" },
+    "mobile_responsive": { "score": 0.0, "notes": "" },
+    "auth_flow": { "score": 0.0, "notes": "" },
+    "loading_states": { "score": 0.0, "notes": "" },
+    "error_handling": { "score": 0.0, "notes": "" }
+  },
+
+  "metrics": {
+    "e2e_p0_passed": 0,
+    "e2e_p0_total": 0,
+    "e2e_p1_passed": 0,
+    "e2e_p1_total": 0,
+    "build_time_seconds": 0,
+    "bundle_size_kb": 0
+  },
+
+  "next_action": {
+    "type": "continue|pivot|finalize",
+    "priority": "fix_p0_first|design_revision|performance_tuning",
+    "estimated_effort": "{X}h"
+  }
+}

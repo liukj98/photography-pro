@@ -1,0 +1,6 @@
+# Supabase 环境变量模板
+# 复制为 .env.development 和 .env.production 并填入实际值
+
+VITE_SUPABASE_URL=your_supabase_project_url
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+VITE_APP_ENV=development

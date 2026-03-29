@@ -145,6 +145,7 @@ export const useAuthStore = create<AuthStore>()(
               id: data.user.id,
               username: credentials.username,
               email: credentials.email,
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
             } as any);
 
             if (profileError) {

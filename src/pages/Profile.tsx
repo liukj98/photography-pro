@@ -4,16 +4,19 @@ import { Button } from '../components/ui/Button';
 import { MapPin, Link as LinkIcon, Calendar, Camera, Eye, Heart, Loader2 } from 'lucide-react';
 import { useAuthStore } from '../stores/authStore';
 import { useUserPhotos } from '../hooks/usePhotos';
+import { useUser } from '../hooks/useUser';
 import { formatNumber } from '../lib/utils';
 
 export function Profile() {
   const params = useParams<{ username: string }>();
   const { user: currentUser } = useAuthStore();
-  const { photos, isLoading, error } = useUserPhotos(params.username);
+  const { user: profileUser, isLoading: isUserLoading, error: userError } = useUser(params.username);
+  const { photos, isLoading: isPhotosLoading, error: photosError } = useUserPhotos(params.username);
   
-  // For demo, use current user as profile user
-  const profileUser = currentUser;
   const isOwnProfile = !params.username || params.username === currentUser?.username;
+  
+  const isLoading = isUserLoading || isPhotosLoading;
+  const error = userError || photosError;
 
   const totalViews = photos.reduce((sum, p) => sum + p.views_count, 0);
   const totalLikes = photos.reduce((sum, p) => sum + p.likes_count, 0);
@@ -145,30 +148,32 @@ export function Profile() {
           {photos.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {photos.map((photo) => (
-                <Card key={photo.id} isHoverable className="group">
-                  <div className="relative aspect-[4/3] overflow-hidden">
-                    <img
-                      src={photo.thumbnail_url}
-                      alt={photo.title}
-                      loading="lazy"
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                    <div className="absolute bottom-0 left-0 right-0 p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
-                      <h3 className="text-white font-semibold truncate">{photo.title}</h3>
-                      <div className="flex items-center gap-4 mt-2 text-white/80 text-sm">
-                        <span className="flex items-center gap-1">
-                          <Eye className="w-4 h-4" />
-                          {photo.views_count}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Heart className="w-4 h-4" />
-                          {photo.likes_count}
-                        </span>
+                <Link key={photo.id} to={`/photo/${photo.id}`}>
+                  <Card isHoverable className="group">
+                    <div className="relative aspect-[4/3] overflow-hidden">
+                      <img
+                        src={photo.thumbnail_url}
+                        alt={photo.title}
+                        loading="lazy"
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                      <div className="absolute bottom-0 left-0 right-0 p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
+                        <h3 className="text-white font-semibold truncate">{photo.title}</h3>
+                        <div className="flex items-center gap-4 mt-2 text-white/80 text-sm">
+                          <span className="flex items-center gap-1">
+                            <Eye className="w-4 h-4" />
+                            {photo.views_count}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Heart className="w-4 h-4" />
+                            {photo.likes_count}
+                          </span>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </Card>
+                  </Card>
+                </Link>
               ))}
             </div>
           ) : (

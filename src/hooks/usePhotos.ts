@@ -75,7 +75,7 @@ export function usePhotos(options: UsePhotosOptions = {}): UsePhotosReturn {
       
       // 获取每个照片的点赞数和用户信息
       const photosWithDetails = await Promise.all(
-        newPhotos.map(async (photo: any) => {
+        newPhotos.map(async (photo: Photo) => {
           // 获取点赞数
           let likesCount = 0;
           try {
@@ -130,6 +130,7 @@ export function usePhotos(options: UsePhotosOptions = {}): UsePhotosReturn {
   useEffect(() => {
     setOffset(0);
     fetchPhotos(0, false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId, category]);
 
   const loadMore = () => {
@@ -263,7 +264,7 @@ export function useUserPhotos(username?: string) {
       
       // 获取每个照片的点赞数
       const photosWithLikes = await Promise.all(
-        (data || []).map(async (photo: any) => {
+        (data || []).map(async (photo: Photo) => {
           let likesCount = 0;
           try {
             const { count } = await supabase
@@ -289,7 +290,7 @@ export function useUserPhotos(username?: string) {
     } finally {
       setIsLoading(false);
     }
-  }, [username, currentUser?.id]);
+  }, [username, currentUser]);
 
   useEffect(() => {
     fetchUserPhotos();
@@ -401,8 +402,10 @@ export function useCreatePhoto() {
       };
       console.log('Inserting data:', insertData);
       
+      // Supabase 类型定义不完整，需要类型断言
       const { data, error } = await supabase
         .from('photos')
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         .insert(insertData as any)
         .select()
         .single();

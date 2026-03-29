@@ -67,8 +67,11 @@ export function Lightbox({ images, currentIndex, isOpen, onClose, onNavigate }: 
 
   // Sync external currentIndex changes
   useEffect(() => {
-    setActiveIndex(currentIndex);
-    resetView();
+    // Use requestAnimationFrame to avoid synchronous setState during render
+    requestAnimationFrame(() => {
+      setActiveIndex(currentIndex);
+      resetView();
+    });
   }, [currentIndex, isOpen, resetView]);
 
   // Keyboard navigation

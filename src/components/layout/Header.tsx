@@ -76,7 +76,7 @@ export function Header() {
                   to={`/u/${user?.username}`}
                   className={cn(
                     'flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-xl transition-all',
-                    location.pathname.startsWith('/u/')
+                    location.pathname === `/u/${user?.username}`
                       ? 'text-primary bg-primary/10'
                       : 'text-text-secondary hover:text-text-primary hover:bg-surface'
                   )}
@@ -168,7 +168,7 @@ export function Header() {
                   to={`/u/${user?.username}`}
                   className={cn(
                     'flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-xl transition-all',
-                    location.pathname.startsWith('/u/')
+                    location.pathname === `/u/${user?.username}`
                       ? 'text-primary bg-primary/10'
                       : 'text-text-secondary hover:text-text-primary hover:bg-surface'
                   )}

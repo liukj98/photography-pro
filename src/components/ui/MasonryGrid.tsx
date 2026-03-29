@@ -31,7 +31,10 @@ export function MasonryGrid({
   }, [columns]);
 
   useEffect(() => {
-    updateColumns();
+    // Use requestAnimationFrame to avoid synchronous setState during render
+    requestAnimationFrame(() => {
+      updateColumns();
+    });
     window.addEventListener('resize', updateColumns);
     return () => window.removeEventListener('resize', updateColumns);
   }, [updateColumns]);

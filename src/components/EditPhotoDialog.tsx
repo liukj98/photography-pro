@@ -77,7 +77,7 @@ export function EditPhotoDialog({
         setErrors({});
       });
     }
-  }, [photo?.id, isOpen]);
+  }, [photo, isOpen]);
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};

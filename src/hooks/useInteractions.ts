@@ -5,6 +5,7 @@ import { useAuthStore } from '../stores/authStore';
 import { useToastStore } from '../stores/toastStore';
 import { useInteractionStore } from '../stores/interactionStore';
 import type { Tables } from '../lib/supabase';
+import type { Photo } from '../types';
 
 // ==================== Like Hook ====================
 
@@ -41,7 +42,7 @@ export function useLike(photoId: string) {
           
           // 2. 检查当前用户是否已点赞
           if (user?.id) {
-            const hasLiked = likesData.some((like: any) => like.user_id === user.id);
+            const hasLiked = likesData.some((like: { user_id: string }) => like.user_id === user.id);
             setIsLiked(hasLiked);
           }
         }
@@ -104,10 +105,11 @@ export function useLike(photoId: string) {
       interactionStore.setLike(photoId, newIsLiked, newCount);
 
       if (newIsLiked) {
-        // 点赞
+        // 点赞 - Supabase 类型定义不完整，需要类型断言
         const { error } = await supabase.from('likes').insert({
           photo_id: photoId,
           user_id: user.id,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } as any);
         
         if (error) throw error;
@@ -226,9 +228,11 @@ export function useFavorite(photoId: string) {
       addToast(newIsFavorited ? '已添加到收藏' : '已取消收藏', 'success');
 
       if (newIsFavorited) {
+        // Supabase 类型定义不完整，需要类型断言
         const { error } = await supabase.from('favorites').insert({
           photo_id: photoId,
           user_id: user.id,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } as any);
         
         if (error) throw error;
@@ -263,6 +267,7 @@ export function useFavorite(photoId: string) {
 
 export function useUserFavorites() {
   const { user, isAuthenticated } = useAuthStore();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [favorites, setFavorites] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -303,12 +308,15 @@ export function useUserFavorites() {
       
       // 为每个收藏的照片获取点赞数
       const favoritesWithLikes = await Promise.all(
-        (data || []).map(async (fav: any) => {
+        (data || []).map(async (fav: { photo?: Photo; created_at: string }) => {
           try {
+            if (!fav.photo?.id) {
+              return { ...fav, photo: { ...fav.photo, likes_count: 0 } };
+            }
             const { count } = await supabase
               .from('likes')
               .select('*', { count: 'exact', head: true })
-              .eq('photo_id', fav.photo?.id);
+              .eq('photo_id', fav.photo.id);
             
             return {
               ...fav,
@@ -410,10 +418,12 @@ export function useViews(photoId: string) {
     
     if (user?.id) {
       try {
+        // Supabase 类型定义不完整，需要类型断言
         await supabase.from('view_stats').insert({
           photo_id: photoId,
           user_id: user.id,
           view_type: 'photo',
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } as any);
       } catch {
         // 忽略错误
@@ -426,7 +436,7 @@ export function useViews(photoId: string) {
     } catch {
       // 忽略错误
     }
-  }, [photoId, interactionStore, user?.id]);
+  }, [photoId, interactionStore, user]);
   
   return { viewsCount, incrementView };
 }
@@ -490,7 +500,7 @@ export function useComments(photoId: string) {
       }
 
       const commentsWithUser = await Promise.all(
-        (commentsData || []).map(async (comment: any) => {
+        (commentsData || []).map(async (comment: Comment) => {
           try {
             const { data: userData } = await supabase
               .from('users')
@@ -547,13 +557,14 @@ export function useComments(photoId: string) {
     try {
       console.log('[addComment] 开始发布评论, photoId:', photoId, 'userId:', user.id);
       
-      // 先插入评论
+      // 先插入评论 - Supabase 类型定义不完整，需要类型断言
       const { data: commentData, error: insertError } = await supabase
         .from('comments')
         .insert({
           photo_id: photoId,
           user_id: user.id,
           content: content.trim(),
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } as any)
         .select('*')
         .single();

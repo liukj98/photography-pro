@@ -60,7 +60,7 @@ export function useStats() {
           .eq('user_id', user.id);
         
         if (!photosViewsError && photosData) {
-          totalViews = photosData.reduce((sum, p: any) => sum + (p.views_count || 0), 0);
+          totalViews = photosData.reduce((sum, p: { views_count?: number }) => sum + (p.views_count || 0), 0);
         }
       } catch {
         totalViews = 0;
@@ -94,7 +94,7 @@ export function useStats() {
         total_photos: photosCount || 0,
         views_by_day: viewsByDay,
         popular_photos:
-          (popularPhotos || []).map((p: any) => ({
+          (popularPhotos || []).map((p: { id: string; title: string; views_count: number }) => ({
             photo_id: p.id,
             title: p.title,
             views: p.views_count,
@@ -120,10 +120,12 @@ export function useStats() {
     }
 
     try {
+      // Supabase 类型定义不完整，需要类型断言
       await supabase.from('view_stats').insert({
         user_id: user.id,
         photo_id: photoId,
         view_type: viewType,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any);
 
       // If viewing a photo, increment its view count

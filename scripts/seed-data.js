@@ -10,9 +10,12 @@
  * npm install @supabase/supabase-js
  */
 
-const { createClient } = require('@supabase/supabase-js');
-const fs = require('fs');
-const path = require('path');
+import { createClient } from '@supabase/supabase-js';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // 读取开发环境配置
 const envPath = path.join(process.cwd(), '.env.development');
@@ -70,10 +73,9 @@ function delay(ms) {
 }
 
 /**
- * 获取随机图片 URL（使用 picsum.photos 或 placeholder）
+ * 获取随机图片 URL（使用 picsum.photos 提供稳定的测试图片）
  */
 function getRandomImageUrl(category, index) {
-  // 使用 picsum.photos 提供稳定的测试图片
   const id = 100 + index;
   return `https://picsum.photos/seed/${category}${id}/1200/800`;
 }
@@ -285,15 +287,6 @@ async function seedData() {
   console.log('-'.repeat(50));
   console.log('\n💡 提示: 开发环境已关闭邮箱验证，可直接登录');
   console.log('   运行 npm run dev 后使用以上账号测试');
-}
-
-// 检查是否安装了 @supabase/supabase-js
-try {
-  require('@supabase/supabase-js');
-} catch (e) {
-  console.error('❌ 请先安装依赖:');
-  console.error('   npm install @supabase/supabase-js');
-  process.exit(1);
 }
 
 // 运行脚本

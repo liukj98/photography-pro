@@ -14,11 +14,11 @@
 
 ## 技术栈
 
-- **前端**：React 19 + TypeScript + Vite
-- **样式**：Tailwind CSS
-- **状态管理**：Zustand
+- **前端**：React 19.2 + TypeScript + Vite 8
+- **样式**：Tailwind CSS 3.4
+- **状态管理**：Zustand 5
 - **后端**：Supabase (PostgreSQL + Auth + Storage)
-- **测试**：Playwright
+- **测试**：Playwright + ESLint 9
 
 ## 快速开始
 
@@ -93,19 +93,25 @@ npm run dev
 
 ```bash
 # 开发
-npm run dev              # 启动开发服务器
-npm run build            # 构建生产版本
-npm run preview          # 预览生产构建
+npm run dev                   # 启动开发服务器
+npm run build                 # 构建生产版本
+npm run preview               # 预览生产构建
 
 # 代码质量
-npm run lint             # 运行 ESLint
+npm run lint                  # 运行 ESLint
 
 # 测试数据
-npm run seed             # 批量创建测试用户和照片
+npm run seed                  # 批量创建测试用户和照片
 
 # 自动化测试
-npm run harness:test     # 运行 Playwright 测试
-npm run harness:test:ui  # 运行测试（UI 模式）
+npm run harness:test          # 运行 Playwright 测试
+npm run harness:test:ui       # 运行测试（UI 模式）
+npm run harness:report        # 显示测试报告
+npm run harness:auto-test     # 自动运行测试
+npm run harness:auto-fix      # 自动修复测试问题
+
+# Git 工具
+npm run auto-commit           # 自动生成提交信息并提交
 ```
 
 ## 测试账号
@@ -126,23 +132,37 @@ npm run harness:test:ui  # 运行测试（UI 模式）
 photography-pro/
 ├── public/              # 静态资源
 ├── src/
-│   ├── components/      # 组件
-│   ├── hooks/           # 自定义 Hooks
+│   ├── assets/          # 静态资源（图片、字体等）
+│   ├── components/      # 可复用组件（18+ 个组件）
+│   ├── hooks/           # 自定义 React Hooks
 │   ├── lib/             # 工具库/Supabase 客户端
-│   ├── pages/           # 页面组件
+│   ├── pages/           # 页面组件（13+ 个页面）
 │   ├── stores/          # Zustand 状态管理
 │   ├── types/           # TypeScript 类型定义
 │   ├── App.tsx          # 根组件
+│   ├── App.css          # 应用样式
+│   ├── index.css        # 全局样式
 │   └── main.tsx         # 入口文件
 ├── supabase/
 │   ├── migrations/      # 数据库迁移文件
-│   └── init-dev.sql     # 开发环境初始化脚本
+│   ├── init-dev.sql     # 开发环境初始化脚本
+│   ├── setup.sql        # 基础配置脚本
+│   ├── add-comments.sql # 评论功能迁移
+│   ├── fix-rls.sql      # RLS 修复脚本
+│   └── setup.md         # 数据库设置说明
 ├── scripts/
 │   ├── seed-data.js     # 测试数据填充脚本
+│   ├── auto-commit.cjs  # 自动提交脚本
 │   └── README.md        # 脚本使用说明
+├── tests/               # Playwright 测试用例
+├── playwright.config.ts # Playwright 配置
 ├── .env.example         # 环境变量模板
 ├── .env.development     # 开发环境配置（不提交）
 ├── .env.production      # 生产环境配置（不提交）
+├── tailwind.config.js   # Tailwind 配置
+├── postcss.config.js    # PostCSS 配置
+├── eslint.config.js     # ESLint 9 配置
+├── vite.config.ts       # Vite 配置
 └── package.json
 ```
 

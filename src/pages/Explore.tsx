@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, forwardRef, useEffect, useMemo } from 'react';
+import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent } from '../components/ui/Card';
 import { Input } from '../components/ui/Input';
@@ -58,7 +58,8 @@ export function Explore() {
     };
     document.addEventListener('visibilitychange', handleVisibilityChange);
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // refetch 是稳定的回调函数，不需要作为依赖
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // 只在挂载时执行一次
 
   // Filter photos by debounced search query

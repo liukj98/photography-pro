@@ -1,8 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
-import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import { supabase } from '../lib/supabase';
+import { isDemoMode, simulateNetworkDelay, generateRandomLikes, generateRandomViews } from '../lib/demo-mode';
 import { useAuthStore } from '../stores/authStore';
 import { useToastStore } from '../stores/toastStore';
 import { useInteractionStore } from '../stores/interactionStore';
+import type { Tables } from '../lib/supabase';
 
 // ==================== Like Hook ====================
 
@@ -51,13 +53,11 @@ export function useLike(photoId: string) {
       }
     };
 
-    if (isSupabaseConfigured) {
-      fetchData();
-    } else {
-      // Demo mode
-      const randomCount = Math.floor(Math.random() * 100);
-      setLikesCount(randomCount);
+    if (isDemoMode()) {
+      setLikesCount(generateRandomLikes());
       setIsInitialized(true);
+    } else {
+      fetchData();
     }
 
     return () => {
@@ -79,9 +79,8 @@ export function useLike(photoId: string) {
 
     setIsLoading(true);
 
-    // Demo mode
-    if (!isSupabaseConfigured) {
-      await new Promise((resolve) => setTimeout(resolve, 300));
+    if (isDemoMode()) {
+      await simulateNetworkDelay(300);
       const newIsLiked = !isLiked;
       const newCount = newIsLiked ? likesCount + 1 : Math.max(0, likesCount - 1);
       setIsLiked(newIsLiked);
@@ -109,7 +108,7 @@ export function useLike(photoId: string) {
         const { error } = await supabase.from('likes').insert({
           photo_id: photoId,
           user_id: user.id,
-        } as any);
+        } as Record<string, unknown>);
         
         if (error) throw error;
       } else {
@@ -182,10 +181,10 @@ export function useFavorite(photoId: string) {
       }
     };
 
-    if (isSupabaseConfigured) {
-      fetchFavoriteStatus();
-    } else {
+    if (isDemoMode()) {
       setIsInitialized(true);
+    } else {
+      fetchFavoriteStatus();
     }
 
     return () => {
@@ -207,9 +206,8 @@ export function useFavorite(photoId: string) {
 
     setIsLoading(true);
 
-    // Demo mode
-    if (!isSupabaseConfigured) {
-      await new Promise((resolve) => setTimeout(resolve, 300));
+    if (isDemoMode()) {
+      await simulateNetworkDelay(300);
       const newIsFavorited = !isFavorited;
       setIsFavorited(newIsFavorited);
       setIsLoading(false);
@@ -231,7 +229,7 @@ export function useFavorite(photoId: string) {
         const { error } = await supabase.from('favorites').insert({
           photo_id: photoId,
           user_id: user.id,
-        } as any);
+        } as Record<string, unknown>);
         
         if (error) throw error;
       } else {
@@ -276,8 +274,8 @@ export function useUserFavorites() {
 
     setIsLoading(true);
 
-    if (!isSupabaseConfigured) {
-      await new Promise((resolve) => setTimeout(resolve, 500));
+    if (isDemoMode()) {
+      await simulateNetworkDelay(500);
       setFavorites([]);
       setIsLoading(false);
       return;
@@ -360,9 +358,8 @@ export function useViews(photoId: string) {
     let isMounted = true;
     
     const fetchViews = async () => {
-      if (!isSupabaseConfigured) {
-        const randomCount = Math.floor(Math.random() * 1000);
-        setViewsCount(randomCount);
+      if (isDemoMode()) {
+        setViewsCount(generateRandomViews());
         return;
       }
       
@@ -381,11 +378,11 @@ export function useViews(photoId: string) {
           return;
         }
           
-        const serverCount = (photo as any)?.views_count || 0;
+        const serverCount = (photo as Tables<'photos'> | null)?.views_count || 0;
         setViewsCount(serverCount);
       } catch (err) {
         console.error('Fetch views error:', err);
-        setViewsCount(Math.floor(Math.random() * 500) + 100);
+        setViewsCount(generateRandomViews(100, 500));
       }
     };
     
@@ -409,7 +406,7 @@ export function useViews(photoId: string) {
     interactionStore.incrementView(photoId);
     setViewsCount(prev => prev + 1);
     
-    if (!isSupabaseConfigured) return;
+    if (isDemoMode()) return;
     
     if (user?.id) {
       try {
@@ -417,14 +414,15 @@ export function useViews(photoId: string) {
           photo_id: photoId,
           user_id: user.id,
           view_type: 'photo',
-        } as any);
+        } as Record<string, unknown>);
       } catch {
         // 忽略错误
       }
     }
     
     try {
-      await (supabase as any).rpc('increment_photo_views', { photo_id: photoId });
+      // Supabase RPC 类型定义不完整，需要类型断言
+      await (supabase.rpc as unknown as (fn: string, params: Record<string, unknown>) => Promise<unknown>)('increment_photo_views', { photo_id: photoId });
     } catch {
       // 忽略错误
     }
@@ -462,8 +460,8 @@ export function useComments(photoId: string) {
 
     setIsLoading(true);
 
-    if (!isSupabaseConfigured) {
-      await new Promise((resolve) => setTimeout(resolve, 500));
+    if (isDemoMode()) {
+      await simulateNetworkDelay(500);
       setComments([
         {
           id: 'mock-1',
@@ -530,8 +528,8 @@ export function useComments(photoId: string) {
 
     setIsSubmitting(true);
 
-    if (!isSupabaseConfigured) {
-      await new Promise((resolve) => setTimeout(resolve, 500));
+    if (isDemoMode()) {
+      await simulateNetworkDelay(500);
       const newComment: Comment = {
         id: 'mock-new',
         photo_id: photoId,
@@ -556,7 +554,7 @@ export function useComments(photoId: string) {
           photo_id: photoId,
           user_id: user.id,
           content: content.trim(),
-        } as any)
+        } as Record<string, unknown>)
         .select('*')
         .single();
 
@@ -567,23 +565,26 @@ export function useComments(photoId: string) {
         throw insertError;
       }
 
+      // 定义评论数据类型
+      type CommentData = { id: string; photo_id: string; user_id: string; content: string; created_at: string };
+
       // 再单独获取用户信息
       let userData: { username: string; avatar_url?: string } | null = null;
       if (commentData) {
         const { data: userInfo } = await supabase
           .from('users')
           .select('username, avatar_url')
-          .eq('id', (commentData as any).user_id)
+          .eq('id', (commentData as CommentData).user_id)
           .maybeSingle();
         userData = userInfo;
       }
 
       const newComment: Comment = {
-        id: (commentData as any).id,
-        photo_id: (commentData as any).photo_id,
-        user_id: (commentData as any).user_id,
-        content: (commentData as any).content,
-        created_at: (commentData as any).created_at,
+        id: (commentData as CommentData).id,
+        photo_id: (commentData as CommentData).photo_id,
+        user_id: (commentData as CommentData).user_id,
+        content: (commentData as CommentData).content,
+        created_at: (commentData as CommentData).created_at,
         user: userData || { username: user.username },
       };
 
@@ -603,7 +604,7 @@ export function useComments(photoId: string) {
   const deleteComment = async (commentId: string) => {
     if (!isAuthenticated || !user) return { error: '未登录' };
 
-    if (!isSupabaseConfigured) {
+    if (isDemoMode()) {
       setComments((prev) => prev.filter((c) => c.id !== commentId));
       addToast('评论已删除', 'success');
       return { error: null };

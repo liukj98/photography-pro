@@ -1,4 +1,5 @@
-import { supabase, isSupabaseConfigured } from './supabase';
+import { supabase } from './supabase';
+import { isDemoMode, simulateNetworkDelay } from './demo-mode';
 import { useToastStore } from '../stores/toastStore';
 
 export interface UploadResult {
@@ -76,11 +77,9 @@ export async function uploadImage(
 ): Promise<UploadResult> {
   const { addToast } = useToastStore.getState();
 
-  // Check Supabase configuration
-  if (!isSupabaseConfigured) {
-    // Demo mode - return mock URL
+  if (isDemoMode()) {
     console.log('Demo mode: Simulating image upload');
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    await simulateNetworkDelay(1000);
     
     const mockUrl = URL.createObjectURL(file);
     return {
@@ -164,7 +163,7 @@ export async function uploadImage(
  * Delete image from Supabase Storage
  */
 export async function deleteImage(path: string): Promise<{ error: string | null }> {
-  if (!isSupabaseConfigured) {
+  if (isDemoMode()) {
     return { error: null };
   }
 

@@ -6,9 +6,8 @@ import { FavoriteButton } from '../components/interactions/FavoriteButton';
 import { CommentSection } from '../components/interactions/CommentSection';
 import { usePhoto } from '../hooks/usePhotos';
 import { useViews } from '../hooks/useInteractions';
-import { ArrowLeft, Eye, Camera, Aperture, Timer, Gauge, Move, Focus } from 'lucide-react';
+import { ArrowLeft, Eye, Camera, Aperture, Timer, Gauge, Move, Focus, Loader2 } from 'lucide-react';
 import { formatDate, formatNumber } from '../lib/utils';
-import { Loader2 } from 'lucide-react';
 import { useEffect } from 'react';
 
 export function PhotoDetail() {

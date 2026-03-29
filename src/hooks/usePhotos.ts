@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import { supabase } from '../lib/supabase';
+import { isDemoMode, mockPhotos, simulateNetworkDelay } from '../lib/demo-mode';
 import { useAuthStore } from '../stores/authStore';
 import { useToastStore } from '../stores/toastStore';
 import type { Photo, PhotoCategory } from '../types';
@@ -20,55 +21,6 @@ interface UsePhotosReturn {
   loadMore: () => void;
 }
 
-// Mock photos for demo mode
-const mockPhotos: Photo[] = [
-  {
-    id: 'mock-1',
-    user_id: 'demo-user',
-    title: '山间晨雾',
-    description: '清晨的山谷，薄雾缭绕',
-    image_url: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=600&fit=crop',
-    thumbnail_url: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=300&fit=crop',
-    category: 'landscape',
-    tags: ['山', '雾', '自然'],
-    views_count: 1234,
-    likes_count: 89,
-    is_public: true,
-    created_at: '2026-03-20T10:00:00Z',
-    updated_at: '2026-03-20T10:00:00Z',
-  },
-  {
-    id: 'mock-2',
-    user_id: 'demo-user',
-    title: '城市夜景',
-    description: '繁华都市的夜晚',
-    image_url: 'https://images.unsplash.com/photo-1519501025264-65ba15a82390?w=800&h=600&fit=crop',
-    thumbnail_url: 'https://images.unsplash.com/photo-1519501025264-65ba15a82390?w=400&h=300&fit=crop',
-    category: 'architecture',
-    tags: ['城市', '夜景', '建筑'],
-    views_count: 987,
-    likes_count: 76,
-    is_public: true,
-    created_at: '2026-03-19T10:00:00Z',
-    updated_at: '2026-03-19T10:00:00Z',
-  },
-  {
-    id: 'mock-3',
-    user_id: 'demo-user',
-    title: '海边日落',
-    description: '金色余晖洒在海面',
-    image_url: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&h=600&fit=crop',
-    thumbnail_url: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=400&h=300&fit=crop',
-    category: 'landscape',
-    tags: ['海', '日落', '自然'],
-    views_count: 2345,
-    likes_count: 156,
-    is_public: true,
-    created_at: '2026-03-18T10:00:00Z',
-    updated_at: '2026-03-18T10:00:00Z',
-  },
-];
-
 export function usePhotos(options: UsePhotosOptions = {}): UsePhotosReturn {
   const { userId, category = 'all', limit = 12 } = options;
   const [photos, setPhotos] = useState<Photo[]>([]);
@@ -81,9 +33,8 @@ export function usePhotos(options: UsePhotosOptions = {}): UsePhotosReturn {
     setIsLoading(true);
     setError(null);
 
-    // Demo mode
-    if (!isSupabaseConfigured) {
-      await new Promise((resolve) => setTimeout(resolve, 500));
+    if (isDemoMode()) {
+      await simulateNetworkDelay(500);
       
       let filtered = [...mockPhotos];
       if (category !== 'all') {
@@ -171,7 +122,9 @@ export function usePhotos(options: UsePhotosOptions = {}): UsePhotosReturn {
     } finally {
       setIsLoading(false);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // photos 在 fetchPhotos 内部使用，但添加为依赖会导致无限循环
+    // fetchPhotos 通过 useCallback 记忆化，依赖变化时才重新创建
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId, category, limit]);
 
   useEffect(() => {
@@ -207,9 +160,8 @@ export function usePhoto(photoId: string | undefined) {
     const fetchPhoto = async () => {
       setIsLoading(true);
 
-      // Demo mode
-      if (!isSupabaseConfigured) {
-        await new Promise((resolve) => setTimeout(resolve, 300));
+      if (isDemoMode()) {
+        await simulateNetworkDelay(300);
         const found = mockPhotos.find((p) => p.id === photoId);
         setPhoto(found || null);
         setIsLoading(false);
@@ -267,9 +219,8 @@ export function useUserPhotos(username?: string) {
 
     setIsLoading(true);
 
-    // Demo mode
-    if (!isSupabaseConfigured) {
-      await new Promise((resolve) => setTimeout(resolve, 300));
+    if (isDemoMode()) {
+      await simulateNetworkDelay(300);
       setPhotos(mockPhotos);
       setIsLoading(false);
       return;
@@ -347,7 +298,7 @@ export function useUserPhotos(username?: string) {
   const deletePhoto = async (photoId: string) => {
     const { addToast } = useToastStore.getState();
     
-    if (!isSupabaseConfigured) {
+    if (isDemoMode()) {
       setPhotos(photos.filter((p) => p.id !== photoId));
       addToast('作品已删除', 'success');
       return { error: null };
@@ -377,7 +328,7 @@ export function useUserPhotos(username?: string) {
   }) => {
     const { addToast } = useToastStore.getState();
     
-    if (!isSupabaseConfigured) {
+    if (isDemoMode()) {
       setPhotos(photos.map((p) => 
         p.id === photoId ? { ...p, ...updateData } as Photo : p
       ));
@@ -386,8 +337,8 @@ export function useUserPhotos(username?: string) {
     }
 
     try {
-      const { error } = await (supabase
-        .from('photos') as any)
+      // Supabase 类型定义不完整，需要类型断言
+      const { error } = await (supabase.from('photos') as unknown as { update: (data: Record<string, unknown>) => { eq: (column: string, value: string) => Promise<{ error: Error | null }> } })
         .update(updateData)
         .eq('id', photoId);
       
@@ -430,9 +381,8 @@ export function useCreatePhoto() {
 
     setIsLoading(true);
 
-    // Demo mode
-    if (!isSupabaseConfigured) {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+    if (isDemoMode()) {
+      await simulateNetworkDelay(1000);
       console.log('Demo mode: Created photo', photoData);
       addToast('作品发布成功！', 'success');
       setIsLoading(false);
@@ -453,7 +403,7 @@ export function useCreatePhoto() {
       
       const { data, error } = await supabase
         .from('photos')
-        .insert(insertData as any)
+        .insert(insertData as Record<string, unknown>)
         .select()
         .single();
 

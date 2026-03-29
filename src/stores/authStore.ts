@@ -1,28 +1,16 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { supabase } from '../lib/supabase';
+import { isDemoMode, createMockUser, simulateNetworkDelay } from '../lib/demo-mode';
 import type { User, AuthState, LoginCredentials, RegisterCredentials } from '../types';
 
 interface AuthStore extends AuthState {
-  // Actions
   login: (credentials: LoginCredentials) => Promise<{ error: string | null }>;
   register: (credentials: RegisterCredentials) => Promise<{ error: string | null }>;
   logout: () => Promise<void>;
   fetchUser: () => Promise<void>;
   setUser: (user: User | null) => void;
 }
-
-// Mock user for development when Supabase is not configured
-const mockUser: User = {
-  id: 'mock-user-id',
-  username: 'demo_user',
-  email: 'demo@example.com',
-  avatar_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop',
-  bio: '摄影爱好者',
-  location: '北京',
-  created_at: '2026-01-01T00:00:00Z',
-  updated_at: '2026-01-01T00:00:00Z',
-};
 
 export const useAuthStore = create<AuthStore>()(
   persist(
@@ -34,14 +22,11 @@ export const useAuthStore = create<AuthStore>()(
       login: async (credentials) => {
         set({ isLoading: true });
         
-        // Check if Supabase is configured
-        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-        if (!supabaseUrl || supabaseUrl === 'your_supabase_project_url') {
-          // Demo mode - accept any credentials
+        if (isDemoMode()) {
           console.log('Demo mode: Simulating login');
-          await new Promise(resolve => setTimeout(resolve, 500));
+          await simulateNetworkDelay(500);
           set({ 
-            user: { ...mockUser, email: credentials.email }, 
+            user: createMockUser(credentials.email), 
             isAuthenticated: true,
             isLoading: false 
           });
@@ -88,7 +73,7 @@ export const useAuthStore = create<AuthStore>()(
 
           set({ isLoading: false });
           return { error: null };
-        } catch (err) {
+        } catch {
           set({ isLoading: false });
           return { error: '登录失败，请稍后重试' };
         }
@@ -97,18 +82,11 @@ export const useAuthStore = create<AuthStore>()(
       register: async (credentials) => {
         set({ isLoading: true });
         
-        // Check if Supabase is configured
-        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-        if (!supabaseUrl || supabaseUrl === 'your_supabase_project_url') {
-          // Demo mode
+        if (isDemoMode()) {
           console.log('Demo mode: Simulating registration');
-          await new Promise(resolve => setTimeout(resolve, 500));
+          await simulateNetworkDelay(500);
           set({ 
-            user: { 
-              ...mockUser, 
-              username: credentials.username,
-              email: credentials.email 
-            }, 
+            user: createMockUser(credentials.email, credentials.username), 
             isAuthenticated: true,
             isLoading: false 
           });
@@ -162,12 +140,12 @@ export const useAuthStore = create<AuthStore>()(
           if (data.user) {
             // Create user profile - Note: This assumes the users table exists
             // In a real app, you might use Supabase Auth triggers instead
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            // Supabase 类型定义不完整，需要类型断言
             const { error: profileError } = await supabase.from('users').insert({
               id: data.user.id,
               username: credentials.username,
               email: credentials.email,
-            } as any);
+            } as Record<string, unknown>);
 
             if (profileError) {
               console.error('Profile creation error:', profileError);
@@ -178,24 +156,21 @@ export const useAuthStore = create<AuthStore>()(
 
           set({ isLoading: false });
           return { error: null };
-        } catch (err) {
+        } catch {
           set({ isLoading: false });
           return { error: '注册失败，请稍后重试' };
         }
       },
 
       logout: async () => {
-        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-        if (supabaseUrl && supabaseUrl !== 'your_supabase_project_url') {
+        if (!isDemoMode()) {
           await supabase.auth.signOut();
         }
         set({ user: null, isAuthenticated: false, isLoading: false });
       },
 
       fetchUser: async () => {
-        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-        if (!supabaseUrl || supabaseUrl === 'your_supabase_project_url') {
-          // Don't fetch in demo mode
+        if (isDemoMode()) {
           set({ isLoading: false });
           return;
         }
@@ -216,7 +191,7 @@ export const useAuthStore = create<AuthStore>()(
           } else {
             set({ user: null, isAuthenticated: false });
           }
-        } catch (error) {
+        } catch {
           set({ user: null, isAuthenticated: false });
         }
       },

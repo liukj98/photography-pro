@@ -53,8 +53,8 @@ export function Settings() {
     }
 
     try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { error: updateError } = await (supabase as any)
+      // Supabase 类型定义不完整，需要类型断言
+      const { error: updateError } = await (supabase as unknown as { from: (table: string) => { update: (data: Record<string, unknown>) => { eq: (column: string, value: string) => Promise<{ error: Error | null }> } } })
         .from('users')
         .update({ avatar_url: url })
         .eq('id', user.id);
@@ -63,7 +63,7 @@ export function Settings() {
 
       setUser({ ...user, avatar_url: url });
       addToast('头像上传成功', 'success');
-    } catch (err) {
+    } catch {
       addToast('更新头像失败', 'error');
     } finally {
       setIsUploading(false);
@@ -89,8 +89,8 @@ export function Settings() {
     }
 
     try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { error } = await (supabase as any)
+      // Supabase 类型定义不完整，需要类型断言
+      const { error } = await (supabase as unknown as { from: (table: string) => { update: (data: Record<string, unknown>) => { eq: (column: string, value: string) => Promise<{ error: Error | null }> } } })
         .from('users')
         .update({
           bio: formData.bio,
@@ -106,7 +106,7 @@ export function Settings() {
         ...formData,
       });
       addToast('资料已更新', 'success');
-    } catch (err) {
+    } catch {
       addToast('更新失败', 'error');
     } finally {
       setIsSaving(false);

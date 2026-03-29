@@ -5,6 +5,40 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+// ==================== 类型安全工具函数 ====================
+
+/**
+ * 安全地访问对象属性，避免 null/undefined 错误
+ */
+export function safeGet<T, K extends keyof T>(obj: T | null | undefined, key: K): T[K] | undefined {
+  return obj?.[key];
+}
+
+/**
+ * 安全地执行数组 map 操作
+ */
+export function safeMap<T, R>(arr: T[] | null | undefined, fn: (item: T, index: number) => R): R[] {
+  if (!Array.isArray(arr)) return [];
+  return arr.map(fn);
+}
+
+/**
+ * 安全地执行数组 filter 操作
+ */
+export function safeFilter<T>(arr: T[] | null | undefined, fn: (item: T, index: number) => boolean): T[] {
+  if (!Array.isArray(arr)) return [];
+  return arr.filter(fn);
+}
+
+/**
+ * 从错误对象中提取错误消息
+ */
+export function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  if (typeof error === 'string') return error;
+  return '发生未知错误';
+}
+
 export function formatDate(dateString: string): string {
   const date = new Date(dateString);
   return new Intl.DateTimeFormat('zh-CN', {

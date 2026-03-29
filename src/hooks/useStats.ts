@@ -1,27 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
-import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import { supabase } from '../lib/supabase';
+import { isDemoMode, simulateNetworkDelay } from '../lib/demo-mode';
 import { useAuthStore } from '../stores/authStore';
 import type { UserStats } from '../types';
-
-// Mock stats for demo mode
-const mockStats: UserStats = {
-  total_views: 15432,
-  total_photos: 24,
-  views_by_day: [
-    { date: '03/22', count: 120 },
-    { date: '03/23', count: 145 },
-    { date: '03/24', count: 132 },
-    { date: '03/25', count: 178 },
-    { date: '03/26', count: 165 },
-    { date: '03/27', count: 189 },
-    { date: '03/28', count: 205 },
-  ],
-  popular_photos: [
-    { photo_id: '1', title: '山间晨雾', views: 1234 },
-    { photo_id: '2', title: '海边日落', views: 987 },
-    { photo_id: '3', title: '城市夜景', views: 756 },
-  ],
-};
 
 export function useStats() {
   const { user, isAuthenticated } = useAuthStore();
@@ -37,10 +18,26 @@ export function useStats() {
 
     setIsLoading(true);
 
-    // Demo mode
-    if (!isSupabaseConfigured) {
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      setStats(mockStats);
+    if (isDemoMode()) {
+      await simulateNetworkDelay(500);
+      setStats({
+        total_views: 1234,
+        total_photos: 5,
+        views_by_day: [
+          { date: '03/23', count: 150 },
+          { date: '03/24', count: 200 },
+          { date: '03/25', count: 180 },
+          { date: '03/26', count: 220 },
+          { date: '03/27', count: 190 },
+          { date: '03/28', count: 250 },
+          { date: '03/29', count: 244 },
+        ],
+        popular_photos: [
+          { photo_id: 'mock-1', title: '山间晨雾', views: 500 },
+          { photo_id: 'mock-2', title: '城市夜景', views: 400 },
+          { photo_id: 'mock-3', title: '海边日落', views: 334 },
+        ],
+      });
       setIsLoading(false);
       return;
     }
@@ -82,12 +79,13 @@ export function useStats() {
       }
 
       // Get popular photos
+      // Supabase 类型定义不完整，需要类型断言
       const { data: popularPhotos, error: popularError } = await supabase
         .from('photos')
         .select('id, title, views_count')
         .eq('user_id', user.id)
         .order('views_count', { ascending: false })
-        .limit(5) as any;
+        .limit(5) as unknown as { data: Array<{ id: string; title: string; views_count: number }> | null; error: Error | null };
 
       if (popularError) throw popularError;
 
@@ -116,7 +114,7 @@ export function useStats() {
   const recordView = async (viewType: 'profile' | 'photo', photoId?: string) => {
     if (!user) return;
 
-    if (!isSupabaseConfigured) {
+    if (isDemoMode()) {
       console.log('Demo mode: Recording view', { viewType, photoId });
       return;
     }
@@ -126,12 +124,12 @@ export function useStats() {
         user_id: user.id,
         photo_id: photoId,
         view_type: viewType,
-      } as any);
+      } as Record<string, unknown>);
 
       // If viewing a photo, increment its view count
       if (viewType === 'photo' && photoId) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        await (supabase.rpc as any)('increment_photo_views', { photo_id: photoId });
+        // Supabase RPC 类型定义不完整，需要类型断言
+        await (supabase.rpc as unknown as (fn: string, params: Record<string, unknown>) => Promise<unknown>)('increment_photo_views', { photo_id: photoId });
       }
     } catch (err) {
       console.error('Failed to record view:', err);

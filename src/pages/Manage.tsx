@@ -7,6 +7,7 @@ import { Search, Edit, Trash2, Eye, Grid, List, Loader2, Camera } from 'lucide-r
 import { useUserPhotos } from '../hooks/usePhotos';
 
 import { EditPhotoDialog } from '../components/EditPhotoDialog';
+import { DeleteConfirmDialog } from '../components/DeleteConfirmDialog';
 import type { Photo } from '../types';
 
 export function Manage() {
@@ -18,6 +19,8 @@ export function Manage() {
   const [editingPhoto, setEditingPhoto] = useState<Photo | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [deletingPhoto, setDeletingPhoto] = useState<Photo | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
   const handleEdit = (photo: Photo) => {
     setEditingPhoto(photo);
@@ -51,18 +54,20 @@ export function Manage() {
     );
   };
 
-  const handleDelete = async (photo: Photo) => {
-    if (!confirm(`确定要删除作品 "${photo.title}" 吗？此操作不可撤销。`)) {
-      return;
-    }
+  const handleDeleteClick = (photo: Photo) => {
+    setDeletingPhoto(photo);
+    setIsDeleteDialogOpen(true);
+  };
 
-    setDeletingId(photo.id);
-    const { error } = await deletePhoto(photo.id);
+  const handleConfirmDelete = async (photoId: string) => {
+    setDeletingId(photoId);
+    const { error } = await deletePhoto(photoId);
     setDeletingId(null);
 
     if (!error) {
-      setSelectedPhotos((prev) => prev.filter((id) => id !== photo.id));
+      setSelectedPhotos((prev) => prev.filter((id) => id !== photoId));
     }
+    return { error };
   };
 
   if (isLoading) {
@@ -187,7 +192,7 @@ export function Manage() {
                       variant="danger"
                       size="sm"
                       isLoading={deletingId === photo.id}
-                      onClick={() => handleDelete(photo)}
+                      onClick={() => handleDeleteClick(photo)}
                     >
                       <Trash2 className="w-4 h-4" />
                     </Button>
@@ -247,7 +252,7 @@ export function Manage() {
                     </button>
                     <button
                       className="p-2 rounded-lg hover:bg-error/10 transition-colors"
-                      onClick={() => handleDelete(photo)}
+                      onClick={() => handleDeleteClick(photo)}
                       disabled={deletingId === photo.id}
                     >
                       {deletingId === photo.id ? (
@@ -295,6 +300,14 @@ export function Manage() {
         onClose={() => setIsEditDialogOpen(false)}
         onSave={handleSaveEdit}
         isLoading={isUpdating}
+      />
+
+      {/* Delete Confirm Dialog */}
+      <DeleteConfirmDialog
+        photo={deletingPhoto}
+        isOpen={isDeleteDialogOpen}
+        onClose={() => setIsDeleteDialogOpen(false)}
+        onConfirm={handleConfirmDelete}
       />
     </div>
   );

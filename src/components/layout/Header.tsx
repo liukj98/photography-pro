@@ -2,6 +2,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../../stores/authStore';
 import { Button } from '../ui/Button';
 import { Camera, User, LogOut, Menu, X } from 'lucide-react';
+import { ThemeSwitcher } from '../ui/ThemeSwitcher';
 import { useState } from 'react';
 import { cn } from '../../lib/utils';
 
@@ -69,8 +70,9 @@ export function Header() {
             ))}
           </nav>
 
-          {/* Auth Buttons */}
+          {/* Right Section */}
           <div className="hidden md:flex items-center gap-3">
+            <ThemeSwitcher />
             {isAuthenticated ? (
               <>
                 <Link
@@ -162,6 +164,11 @@ export function Header() {
                 {item.label}
               </Link>
             ))}
+
+            {/* Theme Switcher (Mobile) */}
+            <div className="px-4 pt-2">
+              <ThemeSwitcher />
+            </div>
             
             {isAuthenticated ? (
               <>

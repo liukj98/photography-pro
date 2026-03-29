@@ -251,7 +251,7 @@ export function Lightbox({ images, currentIndex, isOpen, onClose, onNavigate }: 
             className="p-2 rounded-lg text-white/70 hover:text-white hover:bg-white/10 transition-colors"
             title="重置 (0)"
           >
-            <Maximize2 className="w-5 h-5" />
+            <span className="text-xs font-bold">1:1</span>
           </button>
           <button
             onClick={toggleFullscreen}

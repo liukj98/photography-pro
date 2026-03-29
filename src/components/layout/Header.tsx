@@ -19,6 +19,7 @@ export function Header() {
   const navItems = [
     { label: '首页', href: '/', public: true },
     { label: '探索', href: '/explore', public: true },
+    { label: '教程', href: '/tutorials', public: true },
     ...(isAuthenticated
       ? [
           { label: '上传', href: '/upload', public: false },

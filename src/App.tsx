@@ -16,6 +16,8 @@ import { Favorites } from './pages/Favorites';
 import { PhotoDetail } from './pages/PhotoDetail';
 import { NotFound } from './pages/NotFound';
 import { ResetPassword } from './pages/ResetPassword';
+import { Tutorials } from './pages/Tutorials';
+import { TutorialDetail } from './pages/TutorialDetail';
 import { useAuthStore } from './stores/authStore';
 import { initTheme } from './stores/themeStore';
 import './index.css';
@@ -97,6 +99,22 @@ function App() {
           element={
             <PublicLayout>
               <PhotoDetail />
+            </PublicLayout>
+          }
+        />
+        <Route
+          path="/tutorials"
+          element={
+            <PublicLayout>
+              <Tutorials />
+            </PublicLayout>
+          }
+        />
+        <Route
+          path="/tutorials/:slug"
+          element={
+            <PublicLayout>
+              <TutorialDetail />
             </PublicLayout>
           }
         />

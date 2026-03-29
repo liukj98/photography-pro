@@ -57,10 +57,25 @@ export const useAuthStore = create<AuthStore>()(
           if (error) {
             // Check if error is about email confirmation
             if (error.message.includes('Email not confirmed') || error.message.includes('not confirmed')) {
-              // Try to resend confirmation or notify user
+              // Try to resend confirmation email
+              const { error: resendError } = await supabase.auth.resend({
+                type: 'signup',
+                email: credentials.email,
+                options: {
+                  emailRedirectTo: `${window.location.origin}/login`,
+                },
+              });
+              
               set({ isLoading: false });
+              
+              if (resendError) {
+                return { 
+                  error: '邮箱未验证。请检查您的邮箱收件箱（包括垃圾邮件文件夹）中的验证邮件，或联系管理员。' 
+                };
+              }
+              
               return { 
-                error: '邮箱未验证。请检查您的邮箱收件箱（包括垃圾邮件文件夹）中的验证邮件，或联系管理员。' 
+                error: '邮箱未验证。我们已重新发送验证邮件，请检查您的邮箱（包括垃圾邮件文件夹）。' 
               };
             }
             set({ isLoading: false });

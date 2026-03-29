@@ -135,44 +135,56 @@ export function PhotoDetail() {
             {/* EXIF Data */}
             {photo.exif_data && (
               <Card>
-                <CardContent className="p-6">
+                <CardContent className="p-6 pb-5">
                   <h3 className="font-semibold text-text-primary mb-4">
                     EXIF 信息
                   </h3>
-                  <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-4 text-sm">
                     {photo.exif_data.camera && (
-                      <div className="flex items-center gap-2 text-text-secondary">
-                        <Camera className="w-4 h-4 text-text-muted flex-shrink-0" />
+                      <div className="flex items-center gap-2.5 text-text-secondary leading-relaxed">
+                        <div className="w-5 h-5 flex items-center justify-center flex-shrink-0">
+                          <Camera className="w-4 h-4 text-text-muted" />
+                        </div>
                         <span className="truncate">{photo.exif_data.camera}</span>
                       </div>
                     )}
                     {photo.exif_data.lens && (
-                      <div className="flex items-center gap-2 text-text-secondary">
-                        <Focus className="w-4 h-4 text-text-muted flex-shrink-0" />
+                      <div className="flex items-center gap-2.5 text-text-secondary leading-relaxed">
+                        <div className="w-5 h-5 flex items-center justify-center flex-shrink-0">
+                          <Focus className="w-4 h-4 text-text-muted" />
+                        </div>
                         <span className="truncate">{photo.exif_data.lens}</span>
                       </div>
                     )}
                     {photo.exif_data.aperture && (
-                      <div className="flex items-center gap-2 text-text-secondary">
-                        <Aperture className="w-4 h-4 text-text-muted flex-shrink-0" />
+                      <div className="flex items-center gap-2.5 text-text-secondary leading-relaxed">
+                        <div className="w-5 h-5 flex items-center justify-center flex-shrink-0">
+                          <Aperture className="w-4 h-4 text-text-muted" />
+                        </div>
                         <span>f/{photo.exif_data.aperture}</span>
                       </div>
                     )}
                     {photo.exif_data.shutter && (
-                      <div className="flex items-center gap-2 text-text-secondary">
-                        <Timer className="w-4 h-4 text-text-muted flex-shrink-0" />
+                      <div className="flex items-center gap-2.5 text-text-secondary leading-relaxed">
+                        <div className="w-5 h-5 flex items-center justify-center flex-shrink-0">
+                          <Timer className="w-4 h-4 text-text-muted" />
+                        </div>
                         <span>{photo.exif_data.shutter}s</span>
                       </div>
                     )}
                     {photo.exif_data.iso && (
-                      <div className="flex items-center gap-2 text-text-secondary">
-                        <Gauge className="w-4 h-4 text-text-muted flex-shrink-0" />
+                      <div className="flex items-center gap-2.5 text-text-secondary leading-relaxed">
+                        <div className="w-5 h-5 flex items-center justify-center flex-shrink-0">
+                          <Gauge className="w-4 h-4 text-text-muted" />
+                        </div>
                         <span>ISO {photo.exif_data.iso}</span>
                       </div>
                     )}
                     {photo.exif_data.focal_length && (
-                      <div className="flex items-center gap-2 text-text-secondary">
-                        <Move className="w-4 h-4 text-text-muted flex-shrink-0" />
+                      <div className="flex items-center gap-2.5 text-text-secondary leading-relaxed">
+                        <div className="w-5 h-5 flex items-center justify-center flex-shrink-0">
+                          <Move className="w-4 h-4 text-text-muted" />
+                        </div>
                         <span>{photo.exif_data.focal_length}mm</span>
                       </div>
                     )}

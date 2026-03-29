@@ -30,6 +30,7 @@ export function Manage() {
     category: string;
     tags: string[];
     is_public: boolean;
+    exif_data?: Record<string, string | number>;
   }) => {
     setIsUpdating(true);
     const result = await updatePhoto(photoId, data);

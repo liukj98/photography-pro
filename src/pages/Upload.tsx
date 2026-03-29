@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
-import { Upload as UploadIcon, X, Image as ImageIcon, Loader2 } from 'lucide-react';
+import { Upload as UploadIcon, X, Image as ImageIcon, Loader2, Camera } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { uploadImage, validateImageFile } from '../lib/storage';
 import { useCreatePhoto } from '../hooks/usePhotos';
@@ -36,6 +36,14 @@ export function Upload() {
     category: 'landscape' as PhotoCategory,
     tags: '',
     isPublic: true,
+    exif: {
+      camera: '',
+      lens: '',
+      aperture: '',
+      shutter: '',
+      iso: '',
+      focal_length: '',
+    },
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -143,6 +151,15 @@ export function Upload() {
         .map((tag) => tag.trim())
         .filter((tag) => tag.length > 0);
 
+      // Build exif data (only include non-empty values)
+      const exifData: Record<string, string | number> = {};
+      if (formData.exif.camera.trim()) exifData.camera = formData.exif.camera.trim();
+      if (formData.exif.lens.trim()) exifData.lens = formData.exif.lens.trim();
+      if (formData.exif.aperture.trim()) exifData.aperture = formData.exif.aperture.trim();
+      if (formData.exif.shutter.trim()) exifData.shutter = formData.exif.shutter.trim();
+      if (formData.exif.iso.trim()) exifData.iso = parseInt(formData.exif.iso) || 0;
+      if (formData.exif.focal_length.trim()) exifData.focal_length = formData.exif.focal_length.trim();
+
       // Create photo record
       const { error: createError } = await createPhoto({
         title: formData.title.trim(),
@@ -152,6 +169,7 @@ export function Upload() {
         category: formData.category,
         tags,
         is_public: formData.isPublic,
+        exif_data: Object.keys(exifData).length > 0 ? exifData : undefined,
       });
 
       if (createError) {
@@ -327,6 +345,88 @@ export function Upload() {
                 }
                 disabled={isSubmitting}
               />
+
+              {/* EXIF Data */}
+              <div className="border-t border-border pt-5">
+                <h3 className="text-sm font-medium text-text-secondary mb-4 flex items-center gap-2">
+                  <Camera className="w-4 h-4" />
+                  摄影参数（可选）
+                </h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <Input
+                    label="相机"
+                    placeholder="如：Sony A7M4"
+                    value={formData.exif.camera}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        exif: { ...formData.exif, camera: e.target.value },
+                      })
+                    }
+                    disabled={isSubmitting}
+                  />
+                  <Input
+                    label="镜头"
+                    placeholder="如：24-70mm f/2.8"
+                    value={formData.exif.lens}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        exif: { ...formData.exif, lens: e.target.value },
+                      })
+                    }
+                    disabled={isSubmitting}
+                  />
+                  <Input
+                    label="光圈"
+                    placeholder="如：f/2.8"
+                    value={formData.exif.aperture}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        exif: { ...formData.exif, aperture: e.target.value },
+                      })
+                    }
+                    disabled={isSubmitting}
+                  />
+                  <Input
+                    label="快门"
+                    placeholder="如：1/125s"
+                    value={formData.exif.shutter}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        exif: { ...formData.exif, shutter: e.target.value },
+                      })
+                    }
+                    disabled={isSubmitting}
+                  />
+                  <Input
+                    label="ISO"
+                    placeholder="如：100"
+                    value={formData.exif.iso}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        exif: { ...formData.exif, iso: e.target.value },
+                      })
+                    }
+                    disabled={isSubmitting}
+                  />
+                  <Input
+                    label="焦距"
+                    placeholder="如：35mm"
+                    value={formData.exif.focal_length}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        exif: { ...formData.exif, focal_length: e.target.value },
+                      })
+                    }
+                    disabled={isSubmitting}
+                  />
+                </div>
+              </div>
 
               <div>
                 <label className="flex items-center gap-2 cursor-pointer">

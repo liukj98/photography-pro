@@ -373,6 +373,7 @@ export function useUserPhotos(username?: string) {
     category: string;
     tags: string[];
     is_public: boolean;
+    exif_data?: Record<string, string | number>;
   }) => {
     const { addToast } = useToastStore.getState();
     
@@ -420,6 +421,7 @@ export function useCreatePhoto() {
     category: PhotoCategory;
     tags: string[];
     is_public: boolean;
+    exif_data?: Record<string, string | number>;
   }) => {
     if (!user) {
       addToast('请先登录', 'error');

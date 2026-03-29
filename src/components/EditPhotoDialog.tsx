@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/Dialog';
 import { Button } from './ui/Button';
 import { Input } from './ui/Input';
-import { Tag } from 'lucide-react';
+import { Tag, Camera } from 'lucide-react';
 import { cn } from '../lib/utils';
 import type { Photo, PhotoCategory } from '../types';
 
@@ -25,6 +25,7 @@ interface EditPhotoDialogProps {
     category: string;
     tags: string[];
     is_public: boolean;
+    exif_data?: Record<string, string | number>;
   }) => Promise<{ error: string | null }>;
   isLoading?: boolean;
 }
@@ -42,6 +43,14 @@ export function EditPhotoDialog({
     category: 'landscape' as PhotoCategory,
     tags: '',
     is_public: true,
+    exif: {
+      camera: '',
+      lens: '',
+      aperture: '',
+      shutter: '',
+      iso: '',
+      focal_length: '',
+    },
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -54,6 +63,14 @@ export function EditPhotoDialog({
         category: photo.category,
         tags: photo.tags?.join(', ') || '',
         is_public: photo.is_public,
+        exif: {
+          camera: photo.exif_data?.camera || '',
+          lens: photo.exif_data?.lens || '',
+          aperture: photo.exif_data?.aperture || '',
+          shutter: photo.exif_data?.shutter || '',
+          iso: photo.exif_data?.iso?.toString() || '',
+          focal_length: photo.exif_data?.focal_length || '',
+        },
       });
       setErrors({});
     }
@@ -80,12 +97,22 @@ export function EditPhotoDialog({
       .map((tag) => tag.trim())
       .filter((tag) => tag.length > 0);
 
+    // Build exif data (only include non-empty values)
+    const exifData: Record<string, string | number> = {};
+    if (formData.exif.camera.trim()) exifData.camera = formData.exif.camera.trim();
+    if (formData.exif.lens.trim()) exifData.lens = formData.exif.lens.trim();
+    if (formData.exif.aperture.trim()) exifData.aperture = formData.exif.aperture.trim();
+    if (formData.exif.shutter.trim()) exifData.shutter = formData.exif.shutter.trim();
+    if (formData.exif.iso.trim()) exifData.iso = parseInt(formData.exif.iso) || 0;
+    if (formData.exif.focal_length.trim()) exifData.focal_length = formData.exif.focal_length.trim();
+
     const result = await onSave(photo.id, {
       title: formData.title.trim(),
       description: formData.description.trim(),
       category: formData.category,
       tags,
       is_public: formData.is_public,
+      exif_data: Object.keys(exifData).length > 0 ? exifData : undefined,
     });
 
     if (!result.error) {
@@ -188,6 +215,88 @@ export function EditPhotoDialog({
                 }
                 disabled={isLoading}
               />
+            </div>
+
+            {/* EXIF Data */}
+            <div className="border-t border-border pt-4">
+              <h3 className="text-sm font-medium text-text-secondary mb-4 flex items-center gap-2">
+                <Camera className="w-4 h-4" />
+                摄影参数
+              </h3>
+              <div className="grid grid-cols-2 gap-4">
+                <Input
+                  label="相机"
+                  placeholder="如：Sony A7M4"
+                  value={formData.exif.camera}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      exif: { ...formData.exif, camera: e.target.value },
+                    })
+                  }
+                  disabled={isLoading}
+                />
+                <Input
+                  label="镜头"
+                  placeholder="如：24-70mm f/2.8"
+                  value={formData.exif.lens}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      exif: { ...formData.exif, lens: e.target.value },
+                    })
+                  }
+                  disabled={isLoading}
+                />
+                <Input
+                  label="光圈"
+                  placeholder="如：f/2.8"
+                  value={formData.exif.aperture}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      exif: { ...formData.exif, aperture: e.target.value },
+                    })
+                  }
+                  disabled={isLoading}
+                />
+                <Input
+                  label="快门"
+                  placeholder="如：1/125s"
+                  value={formData.exif.shutter}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      exif: { ...formData.exif, shutter: e.target.value },
+                    })
+                  }
+                  disabled={isLoading}
+                />
+                <Input
+                  label="ISO"
+                  placeholder="如：100"
+                  value={formData.exif.iso}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      exif: { ...formData.exif, iso: e.target.value },
+                    })
+                  }
+                  disabled={isLoading}
+                />
+                <Input
+                  label="焦距"
+                  placeholder="如：35mm"
+                  value={formData.exif.focal_length}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      exif: { ...formData.exif, focal_length: e.target.value },
+                    })
+                  }
+                  disabled={isLoading}
+                />
+              </div>
             </div>
 
             {/* Visibility */}

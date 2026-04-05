@@ -79,6 +79,14 @@ function App() {
           }
         />
         <Route
+          path="/blog"
+          element={
+            <PublicLayout>
+              <Home />
+            </PublicLayout>
+          }
+        />
+        <Route
           path="/explore"
           element={
             <PublicLayout>
